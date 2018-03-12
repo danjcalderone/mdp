@@ -4,10 +4,335 @@
 %
 \documentclass[]{article}
 \usepackage{amsmath, amssymb}
+\usepackage{oubraces}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+\newtheorem{algorithm}{Algorithm}
+\newtheorem{assumption}{Assumption}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{example}{Example}
+\newtheorem{proof}{Proof}
+
+\newcommand{\mc}{\mathcal}
+\newcommand{\mbf}{\mathbf}
+\newcommand{\mb}{\mathbb}
+
+
+
+
 \begin{document}
 
+\section*{Preliminaries}
+\subsection*{Initial Notation}
+\begin{itemize}
+\item Simplex: $\Delta_n$ is the simplex of dimension $n$.  
+\item States: $\mc{S} = \{s_1,\dots,s_n\}$
+\item Actions: $\mc{A} = \{a_1,\dots,a_m\}$
+\item State transitions:
+\subitem $G_{t,k}(i,j) = \text{prob}(X_{t+1}| X_t = s_i, U_t = a_k)$
+\subitem $G_{t,k} \geq 0, \quad G_{t,k}\mbf{1} = \mbf{1} \ \ \text{(row stochastic)}$
+\item Markovian Policy
+\begin{itemize}
+\item $\pi_t(s,a) \triangleq \text{prob}(U_t = a | X_t = s)$
+\item $K_t(i,k) \triangleq \pi_t(s_i,a_k), \qquad K_t \geq 0, \quad K_t \mbf{1} = \mathbf{1}$
+\newline $\pi  = (K_0,K_1,\dots) \quad$ (policy)
+\end{itemize}
+\item Reward and Performance Metric
+\begin{itemize}
+\item $R_t(s,a) \quad$ (immediate reward)
+\item 
+\begin{align}
+v^\pi & = \mb{E}_{p_o}^\pi
+\left[\sum_{t=0}^{N-1} \gamma^t R_t(X_t,U_t) + \gamma^Nr_N(x_N) \right] \\
+& = \mb{E}_{p_0}^\pi \left[ \sum_{t=0}^\infty \gamma^t R_t(X_t,U_t) \right]
+\end{align}
+where $p_o \in \Delta_n$ is the probability density at $t=0$ over states and $\gamma \in (0,1]$ is a discount factor.
+$\gamma < 1$ when $N= \infty$.
+\end{itemize}
+\end{itemize}
+
+\subsection*{Observations}
+\begin{enumerate}
+\item $p_t \in \Delta_n$ is a prob. dist. over states at time $t$. \\
+Given a  decision policy, $\pi$
+\begin{align}
+p_{t+1} = M_{\pi,t}^T p_t
+\end{align}
+where 
+\begin{align}
+M_{\pi,t} = \sum_{k=1}^m G_{t,k} \odot \big(K_t e_k \mbf{1}^T\big) \qquad t=0,1,\dots
+\end{align}
+where $e_k$ is the $k$-th standard basis vector and $\odot$ is the Hadamard product that corresponds to element-wise multiplication.  
+The above propogation defines a Markov Chain (MC) for the time evolution of the density.   Indeed, $M_{\pi,t}$ is a Markov transition matrix whose element $[M_{\pi,t}]_{ij}$ is the probability of transitioning from state $i$ to state $j$ at time $t$ under policy $\pi$.  Note that $M_{\pi,t}$ is row stochastic.  
+\begin{align}
+M_{\pi,t} \geq 0, \quad M_{\pi,t}\mbf{1} = \mbf{1} \qquad \qquad p_{t+1}^T = p^T M_{\pi,t}. \label{eq:mctransition}
+\end{align}
+\item Define the quantities
+\begin{align}
+r_{\pi,t} & \triangleq \big(R_t \odot K_t \big) \mbf{1} \in \mb{R}^n \\
+v^\pi & = \sum_{t=0}^{N \text{ or } \infty} \gamma^t p_t^T r_{\pi,t}
+\end{align}
+where $p_t$ evolves according to to \eqref{eq:mctransition}
+\item For $N<\infty$, finite, letting $V_{\pi,N} = r_N \in \mb{R}^n$. 
+\begin{align}
+V_{\pi,t} = r_{\pi,t} + \gamma M_{\pi,t} V_{\pi,t+1}, \qquad t = N-1,...,1,0
+\end{align} 
+We call $V_{\pi,t} \in \mbf{R}^n$ the value function at time $t$.  Note that that the value function is initialized as the expected reward at the final time and then propogates backwards in time according to the dynamics.  The element $(V_{\pi,t})_i$ can be thought of as the "reward-to-go" from state $i$ at time $t$ when policy $\pi$ is employed.  
+\item When a fixed set of actions are given, $\{U_0,U_1, \dots \}$, i.e. $U_t = a_k(t), \ t = 0,1, \dots$ it can still be expressed as $\pi = (K_0,K_1,\dots)$ with
+$K_t = \mbf{1}e_{k(t)}^T, \ t = 0,1,\dots$
+\item In all the following, we'll focus on Markovian policies, i.e. we do \emph{not} consider history dependent ones. Policies can in general be:
+\begin{enumerate}
+\item Randomized history dependent (RHD)
+\item Randomized Markovian (RM)
+\item Deterministic history dependent (DHD)
+\item Deterministic Markovian (DM)
+\end{enumerate}
+Note: Putterman's book has a proof of the fact that MDPs must have DM optimal policies when $\mc{S}$ and $\mc{A}$ are finite sets (see Proposition 4.4.3, p.90?) for MDPs with $N<\infty$.  This is not necessarily true when the MDP has constraints!
+\end{enumerate}
+
+\section*{Finite Horizon MDPs}
+Problem:  $\max_\pi \ v^\pi$.  
+
+%\begin{align}
+%\overunderbraces
+%{&& \br{1}{p_{N-1}^TM_{\pi,N-1}V_{\pi,N}}}
+%{v^\pi = p_0^T r_{\pi,0} + \gamma p_1^T r_{\pi,1} + \dots + & \gamma^{N-1} p_{N-1}^T r_{\pi,N-1}  + \gamma^N & p_N^T r_N}
+%{&\br{2} {\gamma^{N-1} p_{N-1}^T \Big( \underbrace{r_{\pi,N-1} + \gamma M_{\pi,N-1} V_{\pi,N}}_{V_{\pi,N-1}}
+%\Big)}}
+%\end{align}
 
 
+\begin{align}
+v^\pi & = 
+\overunderbraces{}
+{p_0^T r_{\pi,0} + \gamma p_1^T r_{\pi,1} + \dots + & \gamma^{N-1} p_{N-1}^T r_{\pi,N-1}  + \gamma^N & p_N^T r_N}
+{&& \br{1}{p_{N-1}^TM_{\pi,N-1}V_{\pi,N}}} \\
+& = \qquad \qquad \qquad \qquad \ \  \dots  
++ \gamma^{N-1} p_{N-1}^T \Big( \underbrace{r_{\pi,N-1} + \gamma M_{\pi,N-1} V_{\pi,N}}_{V_{\pi,N-1}}
+\Big) \\
+& 
+\ \ \vdots \qquad \qquad \qquad \qquad \vdots  \qquad \qquad  \qquad \qquad  \vdots \qquad \qquad \qquad \qquad \vdots  \notag \\
+v^\pi & = p_0^T V_{\pi,0}
+\end{align}
+
+Problem: $\max_\pi p_0^TV_{\pi,0}$
+
+Since $V_{\pi,N} = r_N$ for all $\pi$, we can compute $V_{\pi,t}$ by backwards induction.  
+\begin{align}
+V_{\pi,t} = r_{\pi,t} + \gamma M_{\pi,t} V_{\pi,t+1}   \qquad \qquad t = N-1,\dots,0
+\end{align}
+
+Then note that $M_{\pi,t}$ and $r_{\pi,t}$ are linear in $\pi_t$ and 
+\begin{align}
+e_j^T V_{\pi,t} = e_j^T r_{\pi,t} + \gamma e_j^T M_{\pi,t}\underbrace{V_{\pi,t+1}}_{:=y}
+\end{align}
+where
+\begin{align}
+e_j^Tr_{\pi,t}
+& = e_j^T(R_t \odot K_t) \mbf{1} \\
+& = (e_j^T R_t \odot
+\underbrace{e_j^T K_t}_{\substack{j-\text{th row} \\ \text{of $K_t$}}}
+) \mbf{1} \\
+e_j^TM_{\pi,t} y & = e_j^T \left(\sum_{k=1}^m G_{t,k} \odot \left(K_t e_k \mbf{1}^T\right) \right)y \\
+& = \Bigg( \sum_{k=1}^m e_j^T G_{t,k} \odot \Big(
+\underbrace{e_j^T K_t}_{\substack{j-\text{th row} \\ \text{of $K_t$}}}
+e_k \mbf{1}^T \Big) \Bigg) y
+\end{align}
+It follows that $e_j^T V_{\pi,t}$ linearly depends only on the $j$-th row of $K_t$ (decision variable for policy).  Hence in the absence of all other constraints we can solve the following problem to obtain an optimal policy:  \\
+For each $j=1,\dots,n$. 
+\begin{align}
+\max_{e_j^T K_t}  & \quad e_j^T V_{\pi,t} \qquad \qquad \qquad \qquad t = 0,\dots,N-1 \\
+\text{s.t.} & \quad e_j^T K_t \geq 0, \quad e_j^T K_t \mbf{1} = 1 
+\end{align}
+for each row of $K_t, \ t = 0,\dots,N-1$. \\
+Since the cost is linear in the $j$-th row one of the optimal choices for $e_j^TK_t$ is a vertex of the probability simplex in $\mb{R}^m$!
+
+Note that the overall cost to be maximized is
+\begin{align}
+\sum_{t=0}^N \gamma^t p_t^T r_{\pi,t}
+& = p_o^T V_{\pi,0} \\
+& = \sum_{t=0}^{T-1} \gamma^t p_t^T r_{\pi,t} + p_T^T V_{\pi,T}
+\end{align}
+for any $T = 0,...,N-1$.   It follows that 
+\begin{align}
+\max_{\pi}  \quad \sum_{t=0}^N \gamma^t p_t^T r_{\pi,t} 
+ = \max_{\substack{K_0,\dots,K_{T-1} \\ K_T,\dots,K_{N-1}}} \sum_{t=0}^{T-1} \gamma^t p_t^T r_{\pi,t} + p_T^T V_{\pi,T}
+\end{align}
+Note $p_T$ is independent of $K_T,\dots,K_{N-1}$ and purely depends on $K_0,\dots,K_{T-1}$, however $V_{\pi,T}$ is independent of $K_0,\dots,K_{T-1}$.
+
+In this case, meaningful problems are
+\begin{align}
+\max_{\pi} \ \ \sum_{t=0}^N \gamma^t p_t^T r_{\pi,t} \quad = \quad \max_\pi \  \  p_0^T V_{\pi,0}  \qquad \qquad \text{for a given $p_0$.}
+\end{align}
+OR
+\begin{align}
+\max_\pi \ \min_{p_0} \quad \sum_{t=0}^N \gamma^t p_t^T r_{\pi,t} \quad = \quad \max_\pi \ \min_{p_0} \quad p_0^T V_{\pi,0}
+\end{align}
+Since $e_j^T V_{\pi,t}$ linearly depends on $e_j^T K_t$ only, it can be maximized with it's choice.  Also, since
+\begin{align}
+e_j^T V_{\pi,t} = e_j^T \underbrace{r_{\pi,t}}_
+{\substack{\text{linear} \\ \text{in $e_j^TK_t$}}}
++ \gamma e_j^T \underbrace{M_{\pi,t}}_
+{\substack{\text{linear} \\ \text{in $e_j^TK_t$}}}
+V_{\pi,t+1}
+\end{align}
+No matter how $K_t$ is chosen to maximize $e_j^T V_{\pi,t}$, we have to maximize each component of $V_{\pi,t+1}$ separately simply since it's possible as above. More precisely,
+\begin{align}
+\pi^* & = \text{arg } \max_\pi \ \min_{p_0 \in \Delta_n} \quad p_0^T V_{\pi,0} \\ 
+& = \text{arg } \max_\pi \quad e_j^T V_{\pi,0} \qquad \qquad j=1,\dots,n
+\end{align}
+since $e_j \in \Delta_n$ for $j=1,\dots,n$.  It follows that
+\begin{align}
+V_{\pi^*,0} & \geq V_{\pi,0}  \qquad \qquad \qquad \qquad \forall \pi \\
+\Rightarrow  \qquad \qquad  p_0^T V_{\pi^*,0} & \geq p_0^T V_{\pi,0} \qquad \qquad \qquad \quad \forall \pi \\
+\Rightarrow \ \qquad \qquad \qquad  \pi^* & = \max_\pi \ \ p_0^T V_{\pi,0} \qquad \qquad \forall p_0 \in \Delta_n
+\end{align}
+It follows that
+\begin{align}
+\max_\pi \min_{p_0 \in \Delta} \quad p_0^T V_{\pi,0}
+\end{align}
+is a proper problem! \\
+Now, recall that
+\begin{align}
+V_{\pi,N} & = r_N \\
+V_{\pi,t} & = r_{\pi,t} + \gamma M_{\pi,t} V_{\pi,t+1}
+\end{align}
+Since, as shown above, we have that
+\begin{align}
+V_{\pi,t} = \begin{bmatrix} \max_\pi \ e_1^T V_{\pi,t} \\ \vdots \\ \max_\pi \ e_n^T V_{\pi,t} \end{bmatrix}
+\end{align}
+for a given $V_{\pi,t+1}$ we have that
+\begin{align}
+V_{\pi^*,t} \geq V_{\pi,t} \qquad \qquad \forall \pi, \ \ t=0,\dots,N-1
+\end{align}
+The conclusion is that no matter how $p_t$ evolves in time, the optimal policy can be computed in one-shot via dynamic programming (DP).
+\subsubsection*{Dynamic Programming for Finite-Horizon MDPs}
+\begin{itemize}
+\item Initialize. $V_N^* = r_N$
+\item For $t=N-1,\dots,0$, iteratively compute
+\begin{align}
+e_j^T K_t^* & = \qquad \text{arg} \max_{e_j^T K_t^*, e_j \in \Delta_n} \quad e_j^Tr_{\pi,t} + e_j^T \gamma M_{\pi,t} V_{\pi,t+1}^* \\
+V^*_{\pi,t} & = \qquad \max_{e_j^T K_t^*, e_j \in \Delta_n} \quad e_j^Tr_{\pi,t} + e_j^T \gamma M_{\pi,t} V_{\pi,t+1}^*  
+\end{align}
+\end{itemize}
+Since the above maximization is an LP over $\Delta_n$, we can always find an optimal policy that is deterministic Markovian (DMP) in the absence of constraints.  
+\section*{Infinite Horizon MDPs}
+In the infinite horizon case, we assume the transition kernel and rewards are constant over time, i.e. $G_t = G$ and $R_t = R$ for all $t$.  
+\begin{theorem}[Existence and Uniqueness]
+$\ $ \newline
+ The following equation has a unique solution
+\begin{align}
+T(V) = \max_\pi \Big(r_\pi + \gamma M_\pi V \Big)
+\end{align}
+\end{theorem}
+\begin{proof}
+The proof proceeds by using the Banach fixed point theorem on the Bellman operator $T(V)$.  
+Consider $V_1 \rightarrow V_1^*$ and $V_2 \rightarrow V_2^*$ for any $V_1, V_2 \in \mb{R}^n$
+\begin{align}
+V_k^* = \max_{\pi} (r_\pi + \gamma M_\pi V_k), \qquad \qquad k=1,2
+\end{align}
+We consider the difference $||T(V_1) - T(V_2)||_\infty$ under the infinity norm.  
+\begin{align}
+\left|\left| T(V_2) - T(V_1) \right| \right|_\infty 
+& = \left|\left| \max_\pi (r_\pi + \gamma M_\pi V_2) - \max_\pi (r_\pi + \gamma M_\pi V_1) \right|\right|_\infty \\
+& = 
+\max_{j=1...n}\left|\max_\pi e_j^T(r_\pi + \gamma M_\pi V_2) - \max_\pi e_j^T(r_\pi + \gamma M_\pi V_1)\right| \\
+& \leq \max_j \max_\pi \left| e_j^T(r_\pi + \gamma M_\pi V_2) - e_j^T(r_\pi + \gamma M_\pi V_1) \right| \\
+& \leq \max_j \max_\pi \gamma \left| e_j^T M_\pi V_2 - e_j^T M_\pi V_1 \right| \\
+& = \max_\pi \gamma \left|\left| M_\pi (V_2 - V_1) \right|\right|_\infty \\
+& = \max_\pi \gamma \left|\left| V_2 - V_1 \right|\right|_\infty
+\end{align}
+where we have used two facts:
+\begin{align}
+\max_x f(x) - max_y g(y) \leq \max_x f(x) - g(x)
+\end{align}
+and
+\begin{align}
+\left|\left| Mv \right|\right|_\infty
+\leq \left|\left| M \right|\right|_\infty \left|\left| v \right|\right|_\infty  = \left|\left| v \right|\right|_\infty 
+\end{align}
+since $\left|\left| M \right|\right|_\infty = \max_j ||e_j^TM||_1 = 1$. 
+Thus we have that $T(V)$ is a contractive mapping for $\gamma \in [0,1)$.  By the Banach fixed point theorem, it follows that $V=T(V)$ has a unique solution $V^*$ and that the sequence $V_{k+1} = T(V_k)$ for any $V_0$ will converge to $V^*$.  
+\end{proof}
+Explicitly we have that
+\begin{align}
+|| V_{k+1} -V_k || & \leq \gamma ||V_k - V_{k-1}|| \\
+\Rightarrow \qquad \qquad ||V_k - V^*|| & \leq \gamma^k ||V_0 - V^*||
+\end{align}
+
+This proof leads to a straight-forward technique for computing the value function called \emph{value iteration}.  \
+\subsubsection*{Value Iteration}
+\begin{itemize}
+\item Pick $V_0$.  
+\item Compute $V_{k+1} = T(V_k), \ k=0,1,\dots$.
+\item Stop when $||V_{k+1} - V_k||$ is within some desired tolerance.
+\end{itemize}
+Properties of $V^*$ and the corresponding $\pi^*$:
+\begin{align}
+\overunderbraces{&& \br{1}{\text{linear in $\pi$}}}
+{v^\pi = \sum_{t=0}^\infty \gamma^t & p_t^T & r_{\pi,t}}
+{& \br{1}{\text{linear in $\pi$}} &}
+\end{align}
+%\begin{align}
+%\overunderbraces
+%{&& \br{1}{p_{N-1}^TM_{\pi,N-1}V_{\pi,N}}}
+%{v^\pi = p_0^T r_{\pi,0} + \gamma p_1^T r_{\pi,1} + \dots + & \gamma^{N-1} p_{N-1}^T r_{\pi,N-1}  + \gamma^N & p_N^T r_N}
+%{&\br{2} {\gamma^{N-1} p_{N-1}^T \Big( \underbrace{r_{\pi,N-1} + \gamma M_{\pi,N-1} V_{\pi,N}}_{V_{\pi,N-1}}
+%\Big)}}
+%\end{align}
+For any policy, since $\exists \alpha_1,\alpha_2 > 0$ such that
+\begin{align}
+||r_{\pi,t} || \leq \alpha_1, \qquad || p_t || \leq \alpha_2 \qquad \Rightarrow \qquad |p_t^T r_{\pi,t}| \leq \underbrace{\alpha_1\alpha_2}_{:=\alpha}
+\end{align}
+\begin{align}
+\Rightarrow \qquad \sum_{t=0}^\infty \gamma^t |p_t^T r_{\pi,t} | = \alpha \sum_{t=0}^\infty \gamma^t = \alpha \frac{1}{1-\gamma}
+\end{align}
+It follows that $v^\pi$ is absolutely convergent and thus $v^\pi =c$ for some $c$, i.e. all policies have a finite reward for any $p_0 \in \Delta_n$. 
+\begin{align}
+p_t^T =  p_0^T M_{\pi,0} \cdots M_{\pi,t-1}
+\end{align}
+\begin{align}
+v^\pi & = \sum_{t=0}^\infty \gamma^t p_0^T \Big( \underbrace{M_{\pi,0} \cdots M_{\pi,t-1}}_{:= \tilde{M}_{\pi,t-1}} \Big) r_{\pi,t} \\
+& = p_0^T \Big[ r_{\pi,0} + \gamma M_{\pi,0} r_{\pi,1} + \gamma^2 M_{\pi,0} M_{\pi,1} r_{\pi,2} + \cdots \Big] \\
+& = p_0^T \Big[ r_{\pi,0} + \gamma M_{\pi,0} \Big(
+\underbrace{r_{\pi,1} + \gamma M_{\pi,1} r_{\pi,2} + \cdots}_{:= V_{\pi,1}} \Big) \Big] \\
+& = p_0^T \Big[ \underbrace{ r_{\pi,0} + \gamma  M_{\pi,0} V_{\pi,1}}_{:=V_{\pi,0}}\Big]
+\end{align}
+where
+\begin{align}
+V_{\pi,1} & = r_{\pi,1} + \gamma M_{\pi,1} \Big(
+\underbrace{r_{\pi,l2} + \gamma M_{\pi,2} r_{\pi,3} + \cdots}_{:=V_{\pi,2}} \Big) \\
+\Rightarrow \qquad \qquad V_{\pi,t} &  \triangleq r_{\pi,t} + \gamma M_{\pi,t} V_{\pi,t+1}
+\end{align}
+Note $V_{\pi,t}$ are well-defined for all $\gamma \in [0,1)$ due to absolute convergence.  It follows that $v^\pi = p_0^T V_{\pi,0}$. As before $\max_\pi v^\pi = \max_\pi e_j^T V_{\pi,0} \ j=1,\dots,n$.  
+\begin{align}
+V_{\pi,0} & = r_{\pi,0} + \gamma M_{\pi,0} V_{\pi,1} \\
+& \ \vdots \\
+V_{\pi,t} & = r_{\pi,t} + \gamma M_{\pi,t} V_{\pi,t+1} \qquad t=0,1,2,\dots
+\end{align}
+Note: Consider a stationary policy, $\pi = (\pi,\pi,\dots)$ with abuse of notation
+\begin{align}
+V_\pi & = r_\pi + \gamma M_\pi V_\pi \\
+\Rightarrow V_\pi = (I-\gamma M_\pi)^{-1} r_\pi
+\end{align}
+The spectrum of $M_\pi$ is in the unit circle $\Rightarrow I- \gamma M_\pi$ cannot have a zero eigenvalue.  Thus $I-\gamma M_\pi$ is invertible and for stationary policies for stationary processes, we have that
+\begin{align}
+V_\pi & = (I-\gamma M_\pi)^{-1} r_\pi \\
+& = \sum_{t=0}^\infty \gamma^t M_\pi^t r_\pi
+\end{align}
+Since, for Markovian policies, 
+\begin{align}
+V_{\pi,t} = r_{\pi,t} + \gamma M_{\pi,t} V_{\pi,t+1}
+\end{align}
+For optimal, Markovian policies
+\begin{align}
+V^*_{\pi,t} = \max_\pi r_{\pi,t} + \gamma M_{\pi,t} V_{\pi,t+1}^*
+\end{align}
+i.e. $V_{\pi,t}^* = T(V_{\pi,t+1}^*)$.
 
 \end{document}
 
