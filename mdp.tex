@@ -334,6 +334,174 @@ V^*_{\pi,t} = \max_\pi r_{\pi,t} + \gamma M_{\pi,t} V_{\pi,t+1}^*
 \end{align}
 i.e. $V_{\pi,t}^* = T(V_{\pi,t+1}^*)$.
 
+\subsection*{Finite Horizon Total Reward Linear Programming}
+
+Finite horizon, $\gamma = 1$. \\
+\subsubsection*{Primal Problem}
+
+\begin{align}
+\min_{\{W_t\}_{t=0}^N} & \quad p_0^TW_0 \\
+\text{s.t.} & \quad W_N \geq R_n e_k, \\
+& \quad W_t[i] \geq \sum_j G_{t,k}[i,j] \Big(W_{t+1}[j] + R_t(i,k)\Big) \qquad \forall i, \ \forall a_k, \ t=N-1,\dots,0
+\end{align}
+Matrix form:
+\begin{align}
+\min_{\{W_t\}_{t=0}^N} & \quad p_0^TW_0 \\
+\text{s.t.} & \quad W_N \geq R_n e_k, \\
+& \quad W_t \geq G_{t,k}W_{t+1} + \Big(G_{t,k} \odot (R_t e_k \mbf{1}^T) \Big) \mbf{1} \qquad  \forall a_k, \ t=N-1,\dots,0
+\end{align}
+
+Variables:
+\begin{itemize}
+\item $W_t \in \mb{R}^n$: Upper bound on the reward-to-go.
+\item $W_t^*$ is the reward-to-go
+\item $p_0$: initial distribution, must have positive mass in all states.
+\end{itemize}
+
+\subsubsection*{Dual Problem}
+
+
+
+\begin{align}
+\max_{\{y_t\}_{t=0}^N} & \quad \sum_t \mbf{1}^T\big( R_t \odot y_t\big) \mbf{1} \\
+\text{s.t.} & \quad y_0 = p_0, \quad y_t \geq 0  \qquad \qquad t=0,\dots, N \\
+& \quad \sum_k y_{t+1}[i,k] = \sum_i \sum_k G_{t,k}^T[i,j] y_t[j,k]
+\end{align}
+
+\begin{align}
+\max_{\{y_t\}_{t=0}^N} & \quad \sum_t \mbf{1}^T\big( R_t \odot y_t\big) \mbf{1} \\
+\text{s.t.} & \quad y_0 = p_0, \quad y_t \geq 0  \qquad \qquad t=0,\dots, N \\
+& \quad y_{t+1}\mbf{1} = \sum_k \Big(G_{t,k}^T \odot \mbf{1}e_k^T y_t^T\Big)\mbf{1}
+\end{align}
+
+\subsubsection*{Congestion Game}
+
+\begin{itemize}
+\item population of infinitesimal agents
+\item $z_t[s_i,a_k]$:  pop. in state $s_i$ choosing $a_k$ at time $t$
+\item Competition: 
+\begin{itemize}
+\item $R_t[s_i,a_k](z_t)$:  rewards depend on population
+\item usually $R_t[s_i,a_k]\Big(z_t(s_i,a_k)\Big)$. 
+\item usually $R_t[s_i,a_k](u)$ is a decreasing function of mass, i.e. "congestion".
+\end{itemize}
+\end{itemize}
+Recall that for a policy $\pi$, $(K_0,\dots,K_N)$...
+\begin{align}
+r_{\pi,t} = \Big(R_t(z_t) \odot K_t \Big) \mbf{1}, \qquad \qquad
+v^\pi  = \sum_{t=0}^N \gamma^t p_t^T r_{\pi,t} = 
+\sum_{t=0}^N p_t^T r_{\pi,t}
+\end{align}
+
+\subsubsection*{Equilibrium Concept (Wardrop Equilibrium)}
+Wardrop Equilibrium = "continuous population Nash"
+
+\begin{definition}
+A population distribution $z_0,\dots,z_N$ is a \emph{Wardrop equilibrium} if
+\begin{align}
+v^\pi \geq v^{\pi'}
+\end{align}
+for all $\pi$ sucht that $\pi_t(i,k) > 0$ only if $z_t(i,k) >0$.  
+\end{definition}
+Intuitively, this means any strategy that is positively support by $z_t$ at each time step is optimal, i.e. no population mass chooses an inefficient strategy.  
+
+\subsubsection*{Potential Game}
+\begin{definition}
+$\exists$ a function $F(z) \in \mbf{C}^1$ such that
+\begin{align}
+\frac{\partial F}{\partial z_t(i,k)} = R_t[i,k](z_t)
+\end{align}
+\end{definition}
+In the standard case, $R_t[i,k] (z_t) = R_t[i,k]\Big(z_t(s,a)\Big)$ and we can write a potential function similar to the Rosenthal potential from non-atomic routing games
+\begin{align}
+F(z) = \sum_t \sum_i \sum_k \int_0^{z_t(i,k)} R_t[i,k](u) \ du
+\end{align}
+%\begin{itemize}
+%\item Finite horizon.  
+%\item $\gamma = 1$
+%\end{itemize}
+
+\subsubsection*{Potential Optimization Problem}
+Initial population distribution: $m_0 \in \mb{R}^n$
+
+\begin{align}
+\max_{\{z_t\}_{t=0}^N} & \quad F(z) \label{eq:potopt} \\
+\text{s.t.} & \quad z_0 = m_0, \quad z_t \geq 0  \qquad \qquad t=0,\dots, N \notag \\
+& \quad \sum_k z_{t+1}[i,k] = \sum_i \sum_k G_{t,k}^T[i,j] z_t[j,k] \notag
+\end{align}
+Matrix form:
+\begin{align}
+\max_{\{z_t\}_{t=0}^N} & \quad F(z) \\ 
+\text{s.t.} & \quad z_0 = m_0, \quad z_t \geq 0  \qquad \qquad t=0,\dots, N \notag \\
+& \quad z_{t+1}\mbf{1} = \sum_k \Big(G_{t,k}^T \odot \mbf{1}e_k^T z_t^T\Big)\mbf{1} \notag
+\end{align}
+
+\begin{itemize}
+\item $W_t \in \mb{R}^n$:  Dual variables for mass propagation constraints.
+\item $\mu_t \in \mb{R}^{n \times m}$:  Dual variables for positivity constraints.
+\end{itemize}
+
+\begin{theorem}
+A minimizer of \eqref{eq:potopt} is a \emph{Wardrop Equilibrium}.  
+\end{theorem}
+\begin{proof}
+Equilibrium conditions:
+\begin{align}
+\underbrace{R_t[i,k]}_{\frac{\partial F}{\partial z_t[i,k]}} - W_t[i] + e_i^TG_{t,k} W_{t+1} + \mu_t[i,k] & = 0 \\
+R_N[i,k] - W_N[i] + \mu_N[i,k] & = 0 \\
+z_t \geq 0, \quad \mu_t \geq 0, \quad z_t[i,k]\mu_t[i,k] & = 0
+\end{align}
+For a given $\pi$, $(K_0,\dots,K_N)$, we want to compute the cost $v^\pi$ using the optimality conditions as certificates on the cost.  
+\begin{align}
+v^\pi & = 
+\overunderbraces{}
+{p_0^T r_{\pi,0} + \dots + &  p_{N-1}^T r_{\pi,N-1}  +  & p_N^T r_N}
+{&& \br{1}{p_{N-1}^TM_{\pi,N-1}V_{\pi,N}}} \\
+& = \qquad \qquad \qquad \qquad \ \  \dots  
++  p_{N-1}^T \Big( \underbrace{r_{\pi,N-1} + M_{\pi,N-1} V_{\pi,N}}_{V_{\pi,N-1}}
+\Big) \\
+& 
+\ \ \vdots \qquad \qquad \qquad \qquad \vdots  \qquad \qquad  \qquad \qquad  \vdots \qquad \qquad \qquad \qquad \vdots  \notag \\
+v^\pi & = p_0^T V_{\pi,0}
+\end{align}
+\begin{align}
+V_{\pi,N}[i] = r_{\pi,N}[i] & = \sum_k R_N[i,k]K_N[i,k] \\
+& = \sum_k W_N[i] K_N[i,k] - \sum_k \mu_N[i,k] K_N[i,k] \\
+& = W_N[i]  - \underbrace{\sum_k \mu_N[i,k] K_N[i,k]}_{:=\tilde{\mu}_{\pi,N}[i]}
+\end{align}
+
+\begin{align}
+V_{\pi,N-1}[i] & =  r_{\pi,N-1}[i] + e_i^TM_{\pi,N-1} V_{\pi,N} \\
+& = \sum_k R_{N-1}[i,k]K_{N-1}[i,k]  + \sum_j \sum_k G_{N-1,k}[i,j] K_{N-1}[i,k] V_{\pi,N}[j] \\
+& = \sum_k K_{N-1}[i,k] \Bigg(
+\underbrace{R_{N-1}[i,k]}
+_{\substack{W_{N-1}[i] \\ - e_i^T G_{N-1,k}W_N \\ - \mu_{N-1}[i,k]}}
+ + e_i^TG_{N-1,k}
+ \underbrace{V_{\pi,N}}
+ _{\substack{W_N[i]  \\ -  \tilde{\mu}_{\pi,N}[i]}}
+ \Bigg) \\
+  & = \sum_k K_{N-1}[i,k] \Bigg(W_{N-1}[i] - \mu_{N-1}[i,k]
+- e_i^TG_{N-1,k} \tilde{\mu}_{\pi,N}[i] \Bigg)\\
+ & = W_{N-1}[i] - 
+ \underbrace{ \sum_k K_{N-1}[i,k]  \Bigg(\mu_{N-1}[i,k]
++ e_i^TG_{N-1,k} \tilde{\mu}_{\pi,N}[i]\Bigg)}_{:=\tilde{\mu}_{\pi,N-1}[i]}
+& \vdots \\
+V_{\pi,0} & = W_0 - \tilde{\mu}_{\pi,0}
+\end{align}
+Note that $\tilde{\mu}_{\pi,t} \geq 0$.  If $K_t[i,k] > 0$ only when $z_t[i,k] > 0$, it follows by complementary slackness that $K_t[i,k] > 0$ only when $\mu_t[i,k]=0$.  It follows that $\tilde{\mu}_{\pi,t} = 0$ for all $t$.  
+
+Thus for $\pi$ that satisfies the equilibrium condition,
+\begin{align}
+v^\pi  = p_0^TV_{\pi,0} = p_0^TW_0 \geq p_0^TW_0 - p_0^T\tilde{\mu}_{\pi',0} = v^{\pi'}
+\end{align}
+
+\end{proof}
+
+
+
+
+
+
 \end{document}
 
 
