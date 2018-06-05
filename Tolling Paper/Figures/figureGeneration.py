@@ -58,7 +58,7 @@ def NeighbourGen():
                11: (400,-175),
                12: (525,-200)}
     nx.draw(G, pos=nodePos, node_color='c', edge_color='k',
-            font_weight='bold') # With specified positions
+            font_weight='bold', transparent=True) # With specified positions
 #    # node labels
 #    labels={}
 #    labels[1]=r'UW'

@@ -6,6 +6,8 @@ Created on Thu May 31 22:49:38 2018
 """
 import routes as route
 import mdp as mdp
+import constrainedMDP as cMDP
+import dynamicProgramming as dp
 
 import cvxpy as cvx
 import numpy as np
@@ -24,16 +26,64 @@ e = G.number_of_edges();
 v = G.number_of_nodes();
 G = nx.convert_node_labels_to_integers(G)
 pos=nx.spring_layout(G);
-
 #plt.figure();
 #nx.draw(G, pos=pos, node_color='g', edge_color='k', with_labels=True, font_weight='bold')
 #plt.show();
-
-P,c = mdp.generateGridMDP(15,5,G)
-time = 30;
+time = 20;
 states = rowSize*colSize;
+actions = 5;
 
-optRes = mdp.solveMDP(time, P, c);
+P,c = mdp.generateGridMDP(states,actions,G,test= True)
+R = np.zeros((states, actions,time))
+p0 = np.zeros((states));
+p0[0] = 1.0;
+#Construct the time dependent reward
+for t in range(time):
+    R[:,:,t] = 1.0*c;
+# Primal, completely unconstrained case    
+print "Solving primal unconstrained case";
+optRes,optDual = mdp.solveMDP(time, P, R,returnDual=True,verbose = False);
+#mdp.drawOptimalPopulation(time,pos,G,optRes, is2D = False, constrainedState = None);
+
+# solve constrained version: 
+constrainedState = 6;
+print "Solving constrained case, state 6 <= 0.2 case";
+optCRes, tau = mdp.solveCMDP(time, P, R, constrainedState = constrainedState,returnDual = True,verbose=False);    
+#mdp.drawOptimalPopulation(time,pos,G,optCRes, is2D = False, constrainedState = constrainedState);
+# clean up tau
+for i in range(len(tau)):
+    if abs(tau[i]) <= 1e-8:
+        tau[i] = 0.0;
+#print tau; 
+
+
+
+
+# solve problem again using unconstrained case: 
+print "Solving unconstrained problem with new Toll";
+optCSol,optCTau = mdp.solveMDP(time, P, R,
+                               tau = tau,
+                               constrainedState = constrainedState,
+                               returnDual=True,verbose=True);
+#mdp.drawOptimalPopulation(time,pos,G,optCSol,constrainedState=constrainedState)
+
+toll = optCSol[constrainedState,:,:];
+toll = cvx.pos(np.einsum('at->t',toll) - 0.2).value.A1; 
+toll = np.multiply(toll,tau +0.1); 
+tau[2] = tau[2] + 0.01;
+tau[3] = tau[3] + 0.01;
+# create new reward;
+cR = cMDP.constrainedReward(c,tau,constrainedState,time);                            
+ #solve problem again with dynamic programming 
+print "Solving dynamic problem with new Toll";
+dpVC, dpSolC = dp.dynamicP(cR,P,p0);
+#mdp.drawOptimalPopulation(time,pos,G,dpSolC,is2D=True,constrainedState=constrainedState)
+
+
+print 0.2*sum(tau)
+
+
+#---------------------------------Junk---------------------------------------------
 #final = np.sum(optRes[:,:,time-1],axis=1);
 
 #plt.figure()
@@ -59,43 +109,7 @@ optRes = mdp.solveMDP(time, P, c);
 #
 #nx.draw_networkx_nodes(G,pos,node_size=nodesize,node_color='c',alpha=1)
 #
-#plt.show();
-
-#frames = [];
-frameNumber = time;
-
-fig = plt.figure()
-#ax = plt.axes(xlim=(0, 2), ylim=(-2, 2))
-#line, = ax.plot([], [], lw=2)
-i = 0;
-mag = 3000;
-cap = mag* np.ones(v);    
-nx.draw(G, pos=pos, node_color='w',with_labels=True, font_weight='bold');
-nx.draw_networkx_nodes(G,pos,node_size=3.2/3*cap,node_color='r',alpha=1);
-dontStop = True;
-
-try:
-    print('running')
-
-except KeyboardInterrupt:
-    print('paused')
-    inp =input('continue? (y/n)')
-
-for i in range(frameNumber):
-    try:  
-        frame = np.sum(optRes[:,:,i],axis=1);
-        nodesize=[frame[f]*mag for f in G]
-        nx.draw_networkx_nodes(G,pos,node_size=cap,node_color='w',alpha=1)
-        nx.draw_networkx_nodes(G,pos,node_size=nodesize,node_color='c',alpha=1)
-#        anim = animation.FuncAnimation(fig, animate, init_func=init,
-#                               frames=200, interval=20, blit=True)
-
-    except KeyboardInterrupt:
-        dontStop = False;
-    plt.show();
-    plt.pause(0.5);
-
-   
+#plt.show();   
    
 
 
