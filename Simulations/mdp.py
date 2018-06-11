@@ -2,12 +2,36 @@
 """
 Created on Fri Jun 01 12:09:47 2018
 
-@author: craba
+@author: sarah
+These are helpers for mdpRouting game class
 """
 import numpy as np
 import cvxpy as cvx
 import matplotlib.pyplot as plt
 import networkx as nx
+# ----------generate new constrained reward based on exact penalty-------------
+# (for 2D reward matrix)
+def constrainedReward2D(c,toll,constrainedState, time):
+    states, actions = c.shape;
+    constrainedC = np.zeros((states,actions,time));
+    
+    for t in range(time):
+        constrainedC[:,:,t] = c;
+        if toll[t] > 1e-8:
+            for a in range(actions):
+                constrainedC[constrainedState,a,t] += -toll[t];
+    return constrainedC;
+# (for 3D reward matrix):
+def constrainedReward3D(c,toll,constrainedState):
+    states, actions,time = c.shape;
+    constrainedC = 1.0*c;
+
+    for t in range(time):
+        if toll[t] > 1e-8:
+            for a in range(actions):
+                constrainedC[constrainedState,a,t] += -toll[t];
+                
+    return constrainedC;   
 
 def drawOptimalPopulation(time,pos,G,optRes, is2D = False, constrainedState = None):
     frameNumber = time;
@@ -19,9 +43,11 @@ def drawOptimalPopulation(time,pos,G,optRes, is2D = False, constrainedState = No
     mag = 3000;
     cap = mag* np.ones(v);  
     if(constrainedState != None):
-        cap[constrainedState]= cap[constrainedState]/5.; 
+        cap[constrainedState]= cap[constrainedState]*0.3; 
     nx.draw(G, pos=pos, node_color='w',with_labels=True, font_weight='bold');
     nx.draw_networkx_nodes(G,pos,node_size=3.2/3*cap,node_color='r',alpha=1);
+    if(constrainedState != None):
+        cap[constrainedState]= cap[constrainedState]*0.2; 
     dontStop = True; 
     try:
         
@@ -43,7 +69,7 @@ def drawOptimalPopulation(time,pos,G,optRes, is2D = False, constrainedState = No
                     frame = np.einsum('ij->i', optRes[:,:,0]);
                 else:   
                     frame = np.einsum('ij->i', optRes[:,:,i]);
-            nodesize=[frame[f]*mag for f in G]
+            nodesize=[frame[f]*frame[f]*mag for f in G]
             nx.draw_networkx_nodes(G,pos,node_size=cap,node_color='w',alpha=1)
             nx.draw_networkx_nodes(G,pos,node_size=nodesize,node_color='c',alpha=1)  
         except KeyboardInterrupt:
@@ -51,133 +77,6 @@ def drawOptimalPopulation(time,pos,G,optRes, is2D = False, constrainedState = No
         plt.show();
         plt.pause(0.5);
         
-            
-def solveMDP(time, P, c, tau = None, constrainedState = None, 
-             initDist = None, returnDual = False,verbose=False):
-    # Construct the problem.
-    #----------------MDP Routing Game--------------------
-    states,actions,time = c.shape;
-#    R = np.zeros((states, actions,time))
-    R = c;
-#    #Construct the time dependent reward
-#    for t in range(time):
-#        R[:,:,t] = 1.0*c;
-    # y_ijt is 3D array with dimensions p x q x r.
-    y_ijt = {}   
-    for i in range(states):
-        for j in range(actions):
-            for t in range(time):
-                y_ijt[(i,j,t)] = cvx.Variable() 
-    # construct LP objective  
-    objF = sum([sum([sum([y_ijt[(i,j,t)]*R[i,j,t] for i in range(states) ]) for j in range(actions)]) for t in range(time)])
-    
-    if constrainedState != None:
-        epsilon = 0.1; # make optimal solution an interior solution
-        objF += -sum([(tau[t] + epsilon)*cvx.pos(sum([y_ijt[(constrainedState,j,t)] - 0.04 
-                       for j in range(actions)]))
-                for t in range(time)])
-    mdpObj = cvx.Maximize(objF)    
-    # construct constraints
-    positivity = [];
-    massConservation = []; #constraintCounter = 0;
-    initialCondition = [];
-    
-    for i in range(states):
-        # Enforce initial conditoin
-        initState = sum([y_ijt[(i,j,0)] for j in range(actions)]);
-        if initDist == None:
-            if i == 0:
-                initialCondition.append(initState == 1.)
-            else:
-                initialCondition.append(initState == 0.)
-        else: 
-            initialCondition.append(initState == initDist[i]);     
-            
-        for t in range(time):  
-            if t < time-1:
-                # mass conservation constraints between timesteps
-                prevProb = sum([sum([y_ijt[(iLast,j,t)]*P[i,iLast,j] for iLast in range(states) ]) for j in range(actions)]) ;
-                newProb = sum([y_ijt[(i,j,t+1)] for j in range(actions)]);
-                massConservation.append(newProb == prevProb);
-                
-            for j in range(actions):
-                # positivity constraints
-                positivity.append(y_ijt[(i,j,t)] > 0.)
-
-                
-    mdpPolicy = cvx.Problem(mdpObj,positivity+massConservation+initialCondition);
-    
-    mdpRes = mdpPolicy.solve(verbose=verbose)
-    
-    print mdpRes
-    optRes = cvxDict2Arr(y_ijt,[states,actions,time]);
-    optDual = cvxList2Arr(massConservation,[states,time-1],returnDual);
-    
-    return optRes,optDual;
-
-#-------------------------Solving constrained MDP-------------------------------------------
-def solveCMDP(time, P, c, constrainedState, initDist = None,returnDual = False,verbose = False):
-    # Construct the problem.
-    #----------------MDP Routing Game--------------------
-    states,actions,time = c.shape;
-    R = 1.0*c
-    # Construct the time dependent reward
-#    for t in range(time):
-#        R[:,:,t] = 1.0*c;
-    # y_ijt is 3D array with dimensions p x q x r.
-    y_ijt = {}   
-    for i in range(states):
-        for j in range(actions):
-            for t in range(time):
-                y_ijt[(i,j,t)] = cvx.Variable() 
-    # construct LP objective    
-    mdpObj = cvx.Maximize(sum([sum([sum([y_ijt[(i,j,t)]*R[i,j,t] for i in range(states) ]) for j in range(actions)]) for t in range(time)]))
-    
-    # construct constraints
-    positivity = [];
-    massConservation = []; #constraintCounter = 0;
-    initialCondition = [];
-    densityConstraints = [];
-    
-    for i in range(states):
-        # Enforce initial conditoin
-        initState = sum([y_ijt[(i,j,0)] for j in range(actions)]);
-        if initDist == None:
-            if i == 0:
-                initialCondition.append(initState == 1.)
-            else:
-                initialCondition.append(initState == 0.)
-        else: 
-            initialCondition.append(initState == initDist[i]);     
-            
-        for t in range(time):  
-            if t < time-1:
-                # mass conservation constraints between timesteps
-                prevProb = sum([sum([y_ijt[(iLast,j,t)]*P[i,iLast,j] for iLast in range(states) ]) for j in range(actions)]) ;
-                newProb = sum([y_ijt[(i,j,t+1)] for j in range(actions)]);
-                massConservation.append(newProb == prevProb);
-                
-            for j in range(actions):
-                # positivity constraints
-                positivity.append(y_ijt[(i,j,t)] > 0.)
-                         
-            
- # NOTE EXTRA DENSITY CONSTRAINT   
-    for t in range(time):
-        densityConstraints.append(sum([y_ijt[(constrainedState,j,t)] for j in range(actions)])  <= 0.2);
-
-    
-    mdpPolicy = cvx.Problem(mdpObj,positivity+massConservation+initialCondition+densityConstraints);
-
-    
-    mdpRes = mdpPolicy.solve(verbose=verbose)
-    
-    print mdpRes
-    optRes = cvxDict2Arr(y_ijt,[states,actions,time]);
-    optDual = cvxList2Arr(densityConstraints,[time],returnDual);
-       
-    return optRes, optDual;
-
 def generateGridMDP(v,a,G,p = 0.8,test = False):
     """
     Generates a grid MDP based on given graph. p is the probability of reaching the target state given an action.
@@ -226,13 +125,14 @@ def generateGridMDP(v,a,G,p = 0.8,test = False):
     else:
         c = np.random.uniform(size=(v,a))
     return P,c;
-
+#----------convert cvx variable dictionary into an array of dictated shape
 def cvxDict2Arr(optDict, shapeList):
     arr = np.zeros(shapeList);
     for DIter, key in enumerate(optDict):
         arr[key] = optDict[key].value;
     return arr;
-
+#----------convert cvx variable list into an array of dictated shape,
+# mostly used for dual variables, since the cvx constraints are in lists
 def cvxList2Arr(optList,shapeList,isDual):
     arr = np.zeros(shapeList);
     it = np.nditer(arr, flags=['f_index'], op_flags=['writeonly'])    
@@ -244,7 +144,13 @@ def cvxList2Arr(optList,shapeList,isDual):
         
         it.iternext();                    
     return arr;
-
+# truncate one D array to something more readable
+def truncate(tau):
+    for i in range(len(tau)):
+        if abs(tau[i]) <= 1e-8:
+            tau[i] = 0.0;
+    return tau;
+        
 def generateMDP(S,A):
     """
     Generates a random MDP with finite sets X and U such that |X|=S and |U|=A.
