@@ -33,21 +33,26 @@ def constrainedReward3D(c,toll,constrainedState):
                 
     return constrainedC;   
 
-def drawOptimalPopulation(time,pos,G,optRes, is2D = False, constrainedState = None):
+def drawOptimalPopulation(time,pos,G,optRes, is2D = False, 
+                          constrainedState = None, 
+                          startAtOne = False, 
+                          constrainedUpperBound = 0.2):
     frameNumber = time;
     v = G.number_of_nodes();
     fig = plt.figure();
     #ax = plt.axes(xlim=(0, 2), ylim=(-2, 2))
     #line, = ax.plot([], [], lw=2)
     iStart = -5;
-    mag = 3000;
+    mag = 1000;
     cap = mag* np.ones(v);  
     if(constrainedState != None):
-        cap[constrainedState]= cap[constrainedState]*0.3; 
+        # Draw the red circle
+        cap[constrainedState]= cap[constrainedState]*(constrainedUpperBound+0.3); 
     nx.draw(G, pos=pos, node_color='w',with_labels=True, font_weight='bold');
     nx.draw_networkx_nodes(G,pos,node_size=3.2/3*cap,node_color='r',alpha=1);
     if(constrainedState != None):
-        cap[constrainedState]= cap[constrainedState]*0.2; 
+        # Draw the white circle
+        cap[constrainedState]= cap[constrainedState]*(constrainedUpperBound+ 0.2); 
     dontStop = True; 
     try:
         
@@ -69,14 +74,17 @@ def drawOptimalPopulation(time,pos,G,optRes, is2D = False, constrainedState = No
                     frame = np.einsum('ij->i', optRes[:,:,0]);
                 else:   
                     frame = np.einsum('ij->i', optRes[:,:,i]);
-            nodesize=[frame[f]*frame[f]*mag for f in G]
+            if startAtOne:
+                nodesize=[frame[f-1]*mag for f in G];
+            else:
+                nodesize=[frame[f]*frame[f]*mag for f in G];
             nx.draw_networkx_nodes(G,pos,node_size=cap,node_color='w',alpha=1)
             nx.draw_networkx_nodes(G,pos,node_size=nodesize,node_color='c',alpha=1)  
         except KeyboardInterrupt:
             dontStop = False;
         plt.show();
         plt.pause(0.5);
-        
+       
 def generateGridMDP(v,a,G,p = 0.8,test = False):
     """
     Generates a grid MDP based on given graph. p is the probability of reaching the target state given an action.
@@ -151,10 +159,12 @@ def truncate(tau):
             tau[i] = 0.0;
     return tau;
         
-def generateMDP(S,A):
+def generateMDP(v,a,G, p =0.8):
     """
     Generates a random MDP with finite sets X and U such that |X|=S and |U|=A.
-    
+    each action will take a state to one of its neighbours with p = 0.7
+    rest of the neighbours will get p =0.3/(n-1) where n is the number of 
+    neighbours of this state
     Parameters
     ----------
     S : int
@@ -169,9 +179,38 @@ def generateMDP(S,A):
     c : (S,A) array
         Cost such that ``c[i,j]=cost(x_now=i,u_now=j)``.
     """
-    P, c = np.zeros((S,S,A)), np.random.uniform(size=(S,A))
-    for j in range(S):
-        for k in range(A):
-            P[:,j,k] = np.random.uniform(size=S)
-            P[:,j,k] /= np.sum(P[:,j,k])
-    return P, c
+    debug = False;
+    P= np.zeros((v,v,a))
+    for node in range(v):#x_now = node
+        nodeInd = node+1;
+        neighbours = list(G.neighbors(nodeInd));
+        totalN = len(neighbours);
+        # chance of not reaching action
+        pNot = (1.-p)/(totalN);
+        actionIter = 0;
+        if debug: 
+            print neighbours;
+        for neighbour in neighbours: # neighbour = x_next
+            neighbourInd = neighbour - 1;
+            P[neighbourInd,node,actionIter] = p;
+            for scattered in neighbours:
+                scatteredInd = scattered -1;
+                if debug:
+                    print scattered;
+                if scattered != neighbour:
+                    # probablity of ending up at a neighbour
+                    P[scatteredInd,node,actionIter] = pNot;
+            # some probability of staying stationary
+            P[node,node,actionIter] =pNot;
+            actionIter += 1;        
+        while actionIter < a:         
+            P[node, node, actionIter] = p;
+            pNot = (1.-p)/(totalN);
+            for scattered in neighbours: 
+                scatteredInd = scattered -1;
+                P[scatteredInd,node,actionIter] = pNot;
+            actionIter += 1;
+    # test the cost function
+    c = np.zeros((v,a))
+    c[6, 4] = 10.;
+    return P,c

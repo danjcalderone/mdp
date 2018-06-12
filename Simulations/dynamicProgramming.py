@@ -43,6 +43,6 @@ def dynamicP(c, P, p0):
                 y[s,int(pol[s])] = traj[s];
             trajectory[:,t] =  np.einsum('ijk,jk',P,y);
     
-    print V[0,0];
+    print sum([p0[state]*V[state,0] for state in range(states)]);
     return V, trajectory;   
         

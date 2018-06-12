@@ -9,7 +9,7 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 
-def NeighbourGen():
+def NeighbourGen(draw = True):
     # Number of nodes in graph:
     n = 12
 
@@ -57,8 +57,9 @@ def NeighbourGen():
                10: (425,-600),
                11: (400,-175),
                12: (525,-200)}
-    nx.draw(G, pos=nodePos, node_color='c', edge_color='k',
-            font_weight='bold', transparent=True) # With specified positions
+    if draw:
+        nx.draw(G, pos=nodePos, node_color='c', edge_color='k',
+                font_weight='bold', transparent=True) # With specified positions
 #    # node labels
 #    labels={}
 #    labels[1]=r'UW'
@@ -74,3 +75,4 @@ def NeighbourGen():
 #    labels[11]=r'Green Lake'
 #    labels[12]=r'Ravenna'
 #    nx.draw_networkx_labels(G,nodePos,labels,font_size=16)
+    return nodePos, G;

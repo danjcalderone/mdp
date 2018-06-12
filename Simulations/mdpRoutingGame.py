@@ -8,13 +8,14 @@ Created on Mon Jun 11 11:37:47 2018
 
 import mdp as mdp
 import dynamicProgramming as dp
-
+import figureGeneration as fG
 
 import cvxpy as cvx
 import numpy as np
 import networkx as nx
 import scipy.linalg as sla
 import matplotlib.pyplot as plt
+
 
 from collections import namedtuple
 # specify which graph we are using for the mdp problem
@@ -30,6 +31,7 @@ class mdpRoutingGame:
         self.States = None; # number of states
         self.Actions = None; # number of actions
         self.constrainedState = None;
+        self.constrainedUpperBound = None;
         #------------ Underlying Network parameters -------------------
         self.G = None;
         self.graphPos = None; # for drawing
@@ -58,12 +60,20 @@ class mdpRoutingGame:
                                             self.G,
                                             test = True);
             self.R = np.zeros((self.States,self.Actions,Time));
+            self.constrainedUpperBound = 0.2;
             for t in range(Time):
                 self.R[:,:,t] = 1.0*c;
         # seattle graph
         elif graph.type is "seattle":
-            print "seattle"
-             #Pending;   
+            self.graphPos, self.G =  fG.NeighbourGen(False);
+            self.States = self.G.number_of_nodes();
+            self.Actions = len(nx.degree_histogram(self.G));
+            self.P, c = mdp.generateMDP(self.States,
+                                        self.Actions,
+                                        self.G)
+            self.R = np.zeros((self.States,self.Actions,Time));
+            for t in range(Time):
+                self.R[:,:,t] = 1.0*c;
 
 ######################## GETTER ###############################################
     def __call__(self,var): # return something
@@ -74,6 +84,8 @@ class mdpRoutingGame:
             return self.R;
         elif var is "constrainedState":
             return self.constrainedState;
+        elif var is "constrainedUpperBound":
+            return self.constrainedUpperBound;
         elif var is "probability":
             return self.P;
         elif var is "graphPos":
@@ -84,8 +96,11 @@ class mdpRoutingGame:
             return "No proper variable was specified";
 ####################### SETTERS ###############################################
 #------------ set a constrained state-----------------------------
-    def setConstrainedState(self, constrainedState):
+    def setConstrainedState(self, constrainedState, constrainedUpperBound = None):
         self.constrainedState = constrainedState;
+        if constrainedUpperBound is not None:
+            print "upperbound set to" , constrainedUpperBound
+            self.constrainedUpperBound = constrainedUpperBound;
         return True;
 #-------------LP Obejective and Constraints --------------------
     def setObjective(self):
@@ -104,8 +119,9 @@ class mdpRoutingGame:
 # ----------------------LP create penalty --------------------------------------
     def penalty(self):
         y_ijt = self.yijt;
+        perActionPenalty = self.constrainedUpperBound / self.Actions;
         objF = -sum([(self.optimalDual[t] + self.epsilon)*
-                           cvx.pos(sum([y_ijt[(self.constrainedState,j,t)] - 0.04 
+                           cvx.pos(sum([y_ijt[(self.constrainedState,j,t)] - perActionPenalty 
                                    for j in range(self.Actions)]))
                      for t in range(self.Time)])
         self.exactPenalty = objF;
@@ -229,7 +245,7 @@ class mdpRoutingGame:
         for t in range(time):
             densityConstraints.append(sum([y_ijt[(constrainedState,j,t)] 
                                       for j in range(actions)])  
-                                      <= 0.2);
+                                      <= self.constrainedUpperBound);
     
         
         mdpPolicy = cvx.Problem(lp, self.positivity+
