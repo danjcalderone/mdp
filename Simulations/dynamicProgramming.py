@@ -6,7 +6,7 @@ Created on Mon Jun 04 15:40:26 2018
 """
 import numpy as np;
 
-def dynamicP(c, P, p0):
+def dynamicP(c, P, p0, isQuad = False):
     states,actions,time = c.shape;
     V = np.zeros((states, time));
     policy = np.zeros((states, time)); # pi_t(state) = action;

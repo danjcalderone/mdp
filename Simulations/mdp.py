@@ -212,5 +212,5 @@ def generateMDP(v,a,G, p =0.8):
             actionIter += 1;
     # test the cost function
     c = np.zeros((v,a))
-    c[6, 4] = 10.;
+    c[6] = 10.;
     return P,c

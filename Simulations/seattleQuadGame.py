@@ -16,6 +16,7 @@ seattle = mrg.gParam("seattle", None, None);
 
 sGame = mrg.mdpRoutingGame(seattle,Time);
 seattleGraph=sGame("G");
+sGame.setQuad();
 #nx.draw(seattleGraph, pos = sGame("graphPos"),with_labels=True);
 #plt.show()
 p0 = np.ones((seattleGraph.number_of_nodes()))/seattleGraph.number_of_nodes();
@@ -29,9 +30,9 @@ optRes = sGame.solve(p0, verbose=False,returnDual=False);
 #                          sGame("G"),
 #                          optRes,
 #                          startAtOne = True);
-
+#
 sGame.setConstrainedState(6, 0.5);
-print "Solving constrained case, state 6 <= 0.5 case";
+print "Solving constrained case, state 7 >= 0.5 case";
 optCRes = sGame.solveWithConstraint(p0,verbose = False);
 #print "optimal dual: ", sGame("optDual")
 #print "upper bound" , sGame("constrainedUpperBound")
@@ -42,33 +43,34 @@ optCRes = sGame.solveWithConstraint(p0,verbose = False);
 #                          startAtOne = True,
 #                          constrainedState = sGame("constrainedState"), 
 #                          constrainedUpperBound = sGame("constrainedUpperBound"));
-
+##
 print "Solving unconstrained problem with new Toll";
 optCSol = sGame.solve(p0,withPenalty=True,verbose = False, returnDual = False)
-#mdp.drawOptimalPopulation(Time,
-#                          sGame("graphPos"),
-#                          sGame("G"),
-#                          optCSol, 
-#                          startAtOne = True,
-#                          constrainedState = sGame("constrainedState"), 
-#                          constrainedUpperBound = sGame("constrainedUpperBound"));
-
-
-                             
-print "Solving dynamic programming problem with new Toll"; 
-cR = mdp.constrainedReward3D(sGame("reward"),
-                             sGame("optDual") + 0.01, # make dual the interiors
-                             sGame("constrainedState"));                           
-dpVC, dpSolC = dp.dynamicP(cR,sGame("probability"),p0);
-print sGame("constrainedUpperBound")*sum(sGame("optDual"))                          
 mdp.drawOptimalPopulation(Time,
                           sGame("graphPos"),
                           sGame("G"),
-                          dpSolC, 
-                          # only set is2D to true for dynamic programming
-                          is2D = True, 
+                          optCSol, 
                           startAtOne = True,
                           constrainedState = sGame("constrainedState"), 
                           constrainedUpperBound = sGame("constrainedUpperBound"));
+#
+#
+#                             
+#print "Solving dynamic programming problem with new Toll"; 
+#cR = mdp.constrainedReward3D(sGame("reward"),
+#                             sGame("optDual") + 0.01, # make dual the interiors
+#                             sGame("constrainedState"));                           
+#dpVC, dpSolC = dp.dynamicP(cR,sGame("probability"),p0);
+#print sGame("constrainedUpperBound")*sum(sGame("optDual"))                          
+#mdp.drawOptimalPopulation(Time,
+#                          sGame("graphPos"),
+#                          sGame("G"),
+#                          dpSolC, 
+#                          # only set is2D to true for dynamic programming
+#                          is2D = True, 
+#                          startAtOne = True,
+#                          constrainedState = sGame("constrainedState"), 
+#                          constrainedUpperBound = sGame("constrainedUpperBound"));
                              
-                             
+
+

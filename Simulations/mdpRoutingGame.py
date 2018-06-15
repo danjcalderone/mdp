@@ -25,6 +25,7 @@ class mdpRoutingGame:
 #--------------constructor-------------------------------
     def __init__(self, graph, Time):
         #------------------------ MDP problem Parameters ----------------
+        self.isQuad = False;
         self.R = None; # rewards matrix 
         self.P = None;
         self.Time = Time; # number of time steps
@@ -92,9 +93,14 @@ class mdpRoutingGame:
             return self.graphPos;
         elif var is "G":
             return self.G;
+        elif var is "isQuad":
+            return self.isQuad;
         else:
             return "No proper variable was specified";
 ####################### SETTERS ###############################################
+#------------ set MDP to quadratic Objective-----------------------------
+    def setQuad(self):  
+        self.isQuad = True;
 #------------ set a constrained state-----------------------------
     def setConstrainedState(self, constrainedState, constrainedUpperBound = None):
         self.constrainedState = constrainedState;
@@ -109,13 +115,18 @@ class mdpRoutingGame:
             for j in range(self.Actions):
                 for t in range(self.Time):
                     y_ijt[(i,j,t)] = cvx.Variable();
-        objF = sum([sum([sum([y_ijt[(i,j,t)]*self.R[i,j,t] 
+        if self.isQuad:
+            objF = sum([sum([sum([-cvx.pos(self.R[i,j,t])*cvx.square(y_ijt[(i,j,t)])
                          for i in range(self.States) ]) 
                     for j in range(self.Actions)]) 
                for t in range(self.Time)]);
+        else:
+            objF = sum([sum([sum([y_ijt[(i,j,t)]*self.R[i,j,t] 
+                             for i in range(self.States) ]) 
+                        for j in range(self.Actions)]) 
+                   for t in range(self.Time)]);
         self.yijt = y_ijt;
         self.lpObj = objF;
-
 # ----------------------LP create penalty --------------------------------------
     def penalty(self):
         y_ijt = self.yijt;
@@ -226,7 +237,7 @@ class mdpRoutingGame:
         actions = self.Actions;
         time = self.Time;
         constrainedState = self.constrainedState;
-        P = self.P;
+
         
         if self.lpObj is None:
             self.setObjective();
@@ -242,12 +253,16 @@ class mdpRoutingGame:
             self.setInitialCondition(p0);
                
         # EXTRA DENSITY CONSTRAINT on constrained state  
-        for t in range(time):
-            densityConstraints.append(sum([y_ijt[(constrainedState,j,t)] 
-                                      for j in range(actions)])  
-                                      <= self.constrainedUpperBound);
-    
-        
+        if self.isQuad:
+            for t in range(time):
+                densityConstraints.append(sum([y_ijt[(constrainedState,j,t)] 
+                                          for j in range(actions)])  
+                                          <= self.constrainedUpperBound); 
+        else:
+            for t in range(time):
+                densityConstraints.append(sum([y_ijt[(constrainedState,j,t)] 
+                                          for j in range(actions)])  
+                                          <= self.constrainedUpperBound);            
         mdpPolicy = cvx.Problem(lp, self.positivity+
                                     self.massConservation+
                                     self.initialCondition+
