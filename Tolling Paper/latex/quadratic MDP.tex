@@ -1,0 +1,102 @@
+\documentclass{jhwhw}
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{subcaption}
+
+% std math stuff
+\newcommand{\reals}{{\mbox{\bf R}}}
+\newcommand{\nat}{{\mbox{\bf N}}}
+\newcommand{\integers}{{\mbox{\bf Z}}}
+\newcommand{\eqbydef}{\mathrel{\stackrel{\Delta}{=}}}
+\newcommand{\complex}{{\mbox{\bf C}}}
+\newcommand{\symm}{{\mbox{\bf S}}}  % symmetric matrices
+\newcommand{\ip}[2]{\langle #1, #2 \rangle}
+\newcommand{\norm}[1]{\| #1 \|}
+\newcommand{\Span}{\mbox{\textrm{span}}}
+\newcommand{\Range}{\mbox{\textrm{range}}}
+\newcommand{\nullspace}{{\mathcal N}}
+\newcommand{\range}{{\mathcal R}}
+\newcommand{\Nullspace}{\mbox{\textrm{nullspace}}}
+\newcommand{\Rank}{\mathop{\bf Rank}}
+\newcommand{\Tr}{\mathop{\bf Tr}}
+\newcommand{\diag}{\mathop{\bf diag}}
+\newcommand{\lambdamax}{{\lambda_{\rm max}}}
+\newcommand{\lambdamin}{\lambda_{\rm min}}
+\newcommand{\G}{{\mathcal G}}
+\newcommand{\lap}{{\mathcal L}}
+\newcommand{\V}{{\mathcal V}}
+\newcommand{\E}{{\mathcal E}}
+\newcommand{\W}{{\mathcal W}}
+\newcommand{\clconv}{\mathop{\bf cl conv}}
+\newcommand{\conv}{\mathop{\bf conv}}
+\newcommand{\half}{\frac{1}{2}}
+\newcommand{\bone}{\boldsymbol 1}
+\newcommand{\Routes}{\mathcal{P}}
+
+\title{MDP with Quadratic Objective Formulation}
+
+
+% \author{Sarah Li \\
+% \textit{Aeronautics and Astronautics Engineering} \\
+% % \textit{University of Washington}\\
+% % Seattle, USA \\
+% % sarahli@uw.edu
+% }
+
+
+
+\begin{document}
+% \maketitle
+\section{Set Up}
+When the reward/cost function has state dependent values, the objective of the optimiztaion problem becomes quadratic. Suppose each road has state dependent waiting time $r_t(s) =  c(s)\sum_ay_t(s,a) + d(s) $. 
+Then the MDP problem can be written as: 
+\begin{equation}
+\begin{aligned}
+\min_{y_t(s,a)}&  \sum_0^T\sum_s \sum_a \half c(s)y_t^2(s,a) + d(s) y_t(s,a) \\
+\text{s.t.} & \quad \sum_a y_t(s',a) = \sum_s\sum_ap(s'|s,a)y_{t-1}(s,a) \quad (a)\\
+& \quad \sum_ay_0(s,a) = p_0(s) \quad (b)\\
+& \quad y_t(s,a) \geq 0 \quad (c)
+\end{aligned}
+\end{equation}
+Taking dual variables $V_t(s) $ for constraint a, $V_0(s) $ for constraint b, and $\mu_t(s,a) $ for constraint c, the Lagrangian is:
+\begin{equation}
+\begin{aligned}
+L(y_t(s,a), V_t(s), \mu_t(s,a)) = &\sum_0^T\sum_s \sum_a \half c(s)y_t^2(s,a) + d(s) y_t(s,a) \\
++ & \sum_1^T\sum_{s'} V_t(s')\Big(\sum_s\sum_ap(s'|s,a)y_{t-1}(s,a) - \sum_a y_t(s',a)\Big) \\
++ & \sum_s V_0(s)\Big( p_0(s) - \sum_ay_0(s,a) \Big) \\
++ &  \sum_0^T\sum_s \sum_a \mu_t(s,a) y_t(s,a)
+\end{aligned}
+\end{equation}
+
+The KKT conditions are: 
+\begin{equation}
+\begin{aligned} 
+t = T: & \quad c(s)y_T(s,a) + d(s)- V_T(s) + \mu_T(s,a) & = 0 \\
+t = T-1 \cdots 0: & \quad c(s) y_t(s,a)  + d(s)- V_t(s)  + \sum_{s'}V_{t+1}p(s'|s,a) + \mu_t(s,a) &= 0 \\
+\end{aligned}
+\end{equation}
+
+This gives the following dual problem:
+\begin{equation}
+\begin{aligned}
+\max_{y_t(s,a), V_t(s)} & \sum_s V_0(s)p_0(s) - \sum_0^T\sum_a\sum_s \half c(s)y^2_t(s,a) \\
+\text{s.t.} & \quad V_T(s) = c(s)y_T(s,a) + d(s) + \mu_T(s,a) \\
+& \quad V_t(s) = c(s)y_t(s,a) + d(s) + \mu_t(s,a)  - \sum_{s'}V_{t+1} p(s'|s,a)\\
+\end{aligned}
+\end{equation}
+
+This is very similar to the dynamic programming problem in the linear case, except for the second term in the objective. Suppose now $W_T(s,a) = \half c(s) y_T^2(s,a) $, and $W_{t}(s,a)  = \half c(s) y_t^2(s,a) + \sum_{s'} W_{t+1}(s',a) p(s'|s,a) $. The dual becomes: 
+\begin{equation}
+\begin{aligned}
+\max_{y_t(s,a), V_t(s)} & \sum_s V_0(s)p_0(s) - \sum_a\sum_s W_0(s,a)\\
+\text{s.t.} & \quad V_T(s) = c(s)y_T(s,a) + d(s) + \mu_T(s,a) \\
+& \quad V_t(s) = c(s)y_t(s,a) + d(s) + \mu_t(s,a)  - \sum_{s'}V_{t+1}(s') p(s'|s,a)\\
+& \quad W_T(s) = \half c(s) y_T^2(s,a) \\
+& \quad W_{t}(s,a)  = \half c(s) y_t^2(s,a) + \sum_{s'} W_{t+1}(s',a) p(s'|s,a) 
+\end{aligned}
+\end{equation}
+\end{document}
