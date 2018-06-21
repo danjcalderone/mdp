@@ -116,7 +116,8 @@ class mdpRoutingGame:
                 for t in range(self.Time):
                     y_ijt[(i,j,t)] = cvx.Variable();
         if self.isQuad:
-            objF = sum([sum([sum([-cvx.pos(self.R[i,j,t])*cvx.square(y_ijt[(i,j,t)])
+            print "quadratic objective"
+            objF = sum([sum([sum([-0.5*cvx.pos(self.R[i,j,t])*cvx.square(y_ijt[(i,j,t)])
                          for i in range(self.States) ]) 
                     for j in range(self.Actions)]) 
                for t in range(self.Time)]);
@@ -147,7 +148,7 @@ class mdpRoutingGame:
             for t in range(time):                     
                 for j in range(actions):
                     # positivity constraints
-                    self.positivity.append(y_ijt[(i,j,t)] > 0.)
+                    self.positivity.append(y_ijt[(i,j,t)] >= 0.)
                     
 # ----------------------LP set initial condition Constraints ------------------
     def setInitialCondition(self,p0):
@@ -159,6 +160,7 @@ class mdpRoutingGame:
             # Enforce initial condition
             initState = sum([y_ijt[(i,j,0)] for j in range(actions)]);
             if p0 is None:
+                print "no initial condition";
                 if i == 0:
                     self.initialCondition.append(initState == 1.)
                 else:
@@ -173,15 +175,14 @@ class mdpRoutingGame:
         time = self.Time;
         y_ijt = self.yijt;
         for i in range(states):
-            for t in range(time):  
-                if t < time-1:
-                    # mass conservation constraints between timesteps
-                    prevProb = sum([sum([y_ijt[(iLast,j,t)]*self.P[i,iLast,j] 
-                                    for iLast in range(states) ]) 
-                               for j in range(actions)]) ;
-                    newProb = sum([y_ijt[(i,j,t+1)] 
-                              for j in range(actions)]);
-                    self.massConservation.append(newProb == prevProb);
+            for t in range(time-1):  
+                # mass conservation constraints between timesteps
+                prevProb = sum([sum([y_ijt[(iLast,j,t)]*self.P[i,iLast,j] 
+                                for iLast in range(states) ]) 
+                           for j in range(actions)]) ;
+                newProb = sum([y_ijt[(i,j,t+1)] 
+                          for j in range(actions)]);
+                self.massConservation.append(newProb == prevProb);
                     
 ####################### MDP SOLVERS ###########################################       
 #------------- unconstrained MDP solver (with exact penalty)  ----------------                    
@@ -194,23 +195,28 @@ class mdpRoutingGame:
         actions = self.Actions;
         time = self.Time;
         if self.lpObj is None:
+            print "objective is set"
             self.setObjective();
-            
+        lp = None;    
         # construct LP objective  
         if withPenalty:
             if self.exactPenalty is None:
                 self.penalty();
             lp = cvx.Maximize(self.lpObj + self.exactPenalty); # set lp problem            
         else:
+            print "not with penalty"
             lp = cvx.Maximize(self.lpObj);
             
         y_ijt = self.yijt;
-        
+
         if self.positivity is None:
+            print "set positivity"
             self.setPositivity();
         if self.massConservation is None:
+            print "set mass conservation"
             self.setMassConservation();
         if self.initialCondition is None:
+            print "set initial condition"
             self.setInitialCondition(p0);
         
         mdpPolicy = cvx.Problem(lp, self.positivity+

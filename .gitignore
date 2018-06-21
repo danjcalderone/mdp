@@ -1,1 +1,12 @@
+.gitignore
 Simulations/.ipynb_checkpoints/
+*.pyc
+*.png
+*.mp4
+*Neighbourhoods
+*.svg
+*.aux
+*.out
+*.gz 
+*.log
+*.syntex.gz

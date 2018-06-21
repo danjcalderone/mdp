@@ -159,7 +159,7 @@ def truncate(tau):
             tau[i] = 0.0;
     return tau;
         
-def generateMDP(v,a,G, p =0.8):
+def generateMDP(v,a,G, p =0.9):
     """
     Generates a random MDP with finite sets X and U such that |X|=S and |U|=A.
     each action will take a state to one of its neighbours with p = 0.7
@@ -203,14 +203,17 @@ def generateMDP(v,a,G, p =0.8):
             # some probability of staying stationary
             P[node,node,actionIter] =pNot;
             actionIter += 1;        
-        while actionIter < a:         
-            P[node, node, actionIter] = p;
-            pNot = (1.-p)/(totalN);
-            for scattered in neighbours: 
-                scatteredInd = scattered -1;
-                P[scatteredInd,node,actionIter] = pNot;
+        while actionIter < a:  # chances of staying still      
+            P[node, node, actionIter] = 1.0;
+#            P[node, node, actionIter] = p;
+#            pNot = (1.-p)/(totalN);
+#            for scattered in neighbours: 
+#                scatteredInd = scattered -1;
+#                P[scatteredInd,node,actionIter] = pNot;
             actionIter += 1;
     # test the cost function
-    c = np.zeros((v,a))
-    c[6] = 10.;
+    c = 1000.*np.ones((v,a))
+    c[6] = 0.;
+
+#    c[6,4] = 1.;
     return P,c
