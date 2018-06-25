@@ -27,6 +27,7 @@ class mdpRoutingGame:
         #------------------------ MDP problem Parameters ----------------
         self.isQuad = False;
         self.R = None; # rewards matrix 
+        self.C = None; # constant part of the reward
         self.P = None;
         self.Time = Time; # number of time steps
         self.States = None; # number of states
@@ -75,7 +76,21 @@ class mdpRoutingGame:
             self.R = np.zeros((self.States,self.Actions,Time));
             for t in range(Time):
                 self.R[:,:,t] = 1.0*c;
-
+        # seattle graph
+        elif graph.type is "seattleQuad":
+            self.graphPos, self.G =  fG.NeighbourGen(False);
+            self.States = self.G.number_of_nodes();
+            self.Actions = len(nx.degree_histogram(self.G));
+            self.P, c, d = mdp.generateQuadMDP(self.States,
+                                        self.Actions,
+                                        self.G)
+            self.R = np.zeros((self.States,self.Actions,Time));
+            self.C = np.zeros((self.States,self.Actions,Time));
+            for t in range(Time):
+                self.R[:,:,t] = 1.0*d;
+                self.C[:,:,t] = 1.0*c;
+                
+                
 ######################## GETTER ###############################################
     def __call__(self,var): # return something
         # What to use this for
@@ -120,9 +135,13 @@ class mdpRoutingGame:
             objF = sum([sum([sum([-0.5*cvx.pos(self.R[i,j,t])*cvx.square(y_ijt[(i,j,t)])
                          for i in range(self.States) ]) 
                     for j in range(self.Actions)]) 
+               for t in range(self.Time)]) \
+                   + sum([sum([sum([(self.C[i,j,t])*y_ijt[(i,j,t)]
+                         for i in range(self.States) ]) 
+                    for j in range(self.Actions)]) 
                for t in range(self.Time)]);
         else:
-            objF = sum([sum([sum([y_ijt[(i,j,t)]*self.R[i,j,t] 
+            objF = -sum([sum([sum([y_ijt[(i,j,t)]*self.R[i,j,t] 
                              for i in range(self.States) ]) 
                         for j in range(self.Actions)]) 
                    for t in range(self.Time)]);
@@ -131,11 +150,21 @@ class mdpRoutingGame:
 # ----------------------LP create penalty --------------------------------------
     def penalty(self):
         y_ijt = self.yijt;
-        perActionPenalty = self.constrainedUpperBound / self.Actions;
-        objF = -sum([(self.optimalDual[t] + self.epsilon)*
-                           cvx.pos(sum([y_ijt[(self.constrainedState,j,t)] - perActionPenalty 
-                                   for j in range(self.Actions)]))
-                     for t in range(self.Time)])
+#        perActionPenalty = self.constrainedUpperBound / self.Actions;
+        
+        
+        # This is toll corresponding to lower bound constraints imposed between time t = 3 and t = T. 
+        
+        objF = -sum([(self.optimalDual[t-3] + self.epsilon)*
+                           cvx.pos(self.constrainedUpperBound - sum([y_ijt[(self.constrainedState,j,t)] 
+                                   for j in range(self.Actions)]) )
+                     for t in range(3, self.Time)]);
+    
+        # This is toll corresponding to upperbound constraints imposed for all time 
+#        objF = -sum([(self.optimalDual[t] + self.epsilon)*
+#                           cvx.pos(sum([y_ijt[(self.constrainedState,j,t)] - perActionPenalty 
+#                                   for j in range(self.Actions)]))
+#                     for t in range(self.Time)])
         self.exactPenalty = objF;
 # ----------------------LP setPositivity Constraints --------------------------
     def setPositivity(self):
@@ -202,7 +231,7 @@ class mdpRoutingGame:
         if withPenalty:
             if self.exactPenalty is None:
                 self.penalty();
-            lp = cvx.Maximize(self.lpObj + self.exactPenalty); # set lp problem            
+            lp = cvx.Maximize(self.lpObj +  self.exactPenalty); # set lp problem            
         else:
             print "not with penalty"
             lp = cvx.Maximize(self.lpObj);
@@ -246,6 +275,7 @@ class mdpRoutingGame:
 
         
         if self.lpObj is None:
+            print "setting constraints again"
             self.setObjective();
         lp = cvx.Maximize(self.lpObj);
         y_ijt = self.yijt;
@@ -260,15 +290,15 @@ class mdpRoutingGame:
                
         # EXTRA DENSITY CONSTRAINT on constrained state  
         if self.isQuad:
-            for t in range(time):
+            for t in range(3, time):
                 densityConstraints.append(sum([y_ijt[(constrainedState,j,t)] 
                                           for j in range(actions)])  
-                                          <= self.constrainedUpperBound); 
+                                          >= self.constrainedUpperBound); 
         else:
             for t in range(time):
                 densityConstraints.append(sum([y_ijt[(constrainedState,j,t)] 
                                           for j in range(actions)])  
-                                          <= self.constrainedUpperBound);            
+                                          >= self.constrainedUpperBound);            
         mdpPolicy = cvx.Problem(lp, self.positivity+
                                     self.massConservation+
                                     self.initialCondition+

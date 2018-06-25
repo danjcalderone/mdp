@@ -60,6 +60,11 @@ def NeighbourGen(draw = True):
     if draw:
         nx.draw(G, pos=nodePos, node_color='c', edge_color='k',
                 font_weight='bold', transparent=True) # With specified positions
+    distances = {};
+    for e in edges:
+        d1 = np.asarray(nodePos[e[0]]);
+        d2 = np.asarray(nodePos[e[1]]);
+        distances[e] = np.linalg.norm(d1 - d2);
 #    # node labels
 #    labels={}
 #    labels[1]=r'UW'

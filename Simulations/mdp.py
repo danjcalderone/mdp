@@ -178,9 +178,13 @@ def generateMDP(v,a,G, p =0.9):
         Transition probability tensor such that ``P[i,j,k]=prob(x_next=i | x_now=j, u_now=k)``.
     c : (S,A) array
         Cost such that ``c[i,j]=cost(x_now=i,u_now=j)``.
+        
+        
+        
+        COST IS Cy one^T - D
     """
     debug = False;
-    P= np.zeros((v,v,a))
+    P= np.zeros((v,v,a)); d = np.zeros((v,a))
     for node in range(v):#x_now = node
         nodeInd = node+1;
         neighbours = list(G.neighbors(nodeInd));
@@ -193,6 +197,7 @@ def generateMDP(v,a,G, p =0.9):
         for neighbour in neighbours: # neighbour = x_next
             neighbourInd = neighbour - 1;
             P[neighbourInd,node,actionIter] = p;
+            # chance of ending somewhere else
             for scattered in neighbours:
                 scatteredInd = scattered -1;
                 if debug:
@@ -215,5 +220,73 @@ def generateMDP(v,a,G, p =0.9):
     c = 1000.*np.ones((v,a))
     c[6] = 0.;
 
-#    c[6,4] = 1.;
     return P,c
+    
+def generateQuadMDP(v,a,G, p =0.9):
+    """
+    Generates a random MDP with finite sets X and U such that |X|=S and |U|=A.
+    each action will take a state to one of its neighbours with p = 0.7
+    rest of the neighbours will get p =0.3/(n-1) where n is the number of 
+    neighbours of this state
+    Parameters
+    ----------
+    S : int
+        Cardinality of state space.
+    A : int
+        Cardinality of input space.
+        
+    Returns
+    -------
+    P : (S,S,A) array
+        Transition probability tensor such that ``P[i,j,k]=prob(x_next=i | x_now=j, u_now=k)``.
+    c : (S,A) array
+        Cost such that ``c[i,j]=cost(x_now=i,u_now=j)``.
+        
+        
+        
+        COST IS Cy one^T - D
+    """
+    
+    
+    debug = False;
+    P= np.zeros((v,v,a)); c = np.zeros((v,a)); d = np.zeros((v,a))
+    for node in range(v):#x_now = node
+        nodeInd = node+1;
+        neighbours = list(G.neighbors(nodeInd));
+        totalN = len(neighbours);
+        # chance of not reaching action
+        pNot = (1.-p)/(totalN);
+        actionIter = 0;
+        if debug: 
+            print neighbours;
+        for neighbour in neighbours: # neighbour = x_next
+            neighbourInd = neighbour - 1;
+            P[neighbourInd,node,actionIter] = p;
+            c[node, actionIter] = -100.;
+            d[node, actionIter] = 0; # indedpendent of congestion
+            # chance of ending somewhere else
+            for scattered in neighbours:
+                scatteredInd = scattered -1;
+                if debug:
+                    print scattered;
+                if scattered != neighbour:
+                    # probablity of ending up at a neighbour
+                    P[scatteredInd,node,actionIter] = pNot;
+            # some probability of staying stationary
+            P[node,node,actionIter] =pNot;
+            actionIter += 1;        
+        while actionIter < a:  # chances of staying still      
+            P[node, node, actionIter] = 1.0;
+            c[node, actionIter] = 100.; # constant offset 
+            d[node,actionIter] = 2.7 *actionIter; # dependence on current density
+#            P[node, node, actionIter] = p;
+#            pNot = (1.-p)/(totalN);
+#            for scattered in neighbours: 
+#                scatteredInd = scattered -1;
+#                P[scatteredInd,node,actionIter] = pNot;
+            actionIter += 1;
+    # test the cost function
+#    c = 1000.*np.ones((v,a))
+#    c[6] = 0.;
+
+    return P,c,d     

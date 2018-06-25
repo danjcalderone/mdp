@@ -15,14 +15,14 @@ def dynamicPLinearCost(c,P,yt, p0, hasToll =False, toll = None, tollState = None
     for tIter in range(time-1):
         t = time-1-tIter;   
         print "----------------------t = ", t," -----------------";
-        if t == time-2:
+        if t == time-1:
             cCurrent =-np.multiply(c[:,:,t], yt[:,:,t]);
             if hasToll:    
                 V[tollState,t] = V[tollState,t] + toll[t];
 #            print cCurrent.shape;
             V[:,t] = np.max(cCurrent, axis = 1);
-            print cCurrent;
-            print V[:,t]
+#            print cCurrent;
+#            print V[:,t]
         else:
             cCurrent =-np.multiply(c[:,:,t], yt[:,:,t]);
             if hasToll:    
@@ -33,9 +33,9 @@ def dynamicPLinearCost(c,P,yt, p0, hasToll =False, toll = None, tollState = None
             V[:,t] = np.max(obj, axis=1);
             pol = np.argmax(obj, axis=1);
             policy[:,t+1] = pol;
-            print obj
-            print V[:,t];
-            print pol;
+#            print obj
+#            print V[:,t];
+#            print pol;
             
 
             
