@@ -45,31 +45,31 @@ print "upper bound" , sGame("constrainedUpperBound")
 #                          startAtOne = True,
 #                          constrainedState = sGame("constrainedState"), 
 #                          constrainedUpperBound = sGame("constrainedUpperBound"));
-###
+####
 print "Solving unconstrained problem with new Toll";
 optCSol = sGame.solve(p0,withPenalty=True,verbose = False, returnDual = False)
-#mdp.drawOptimalPopulation(Time,
-#                          sGame("graphPos"),
-#                          sGame("G"),
-#                          optCSol, 
-#                          startAtOne = True,
-#                          constrainedState = sGame("constrainedState"), 
-#                          constrainedUpperBound = sGame("constrainedUpperBound"));
+mdp.drawOptimalPopulation(Time,
+                          sGame("graphPos"),
+                          sGame("G"),
+                          optCSol, 
+                          startAtOne = True,
+                          constrainedState = sGame("constrainedState"), 
+                          constrainedUpperBound = sGame("constrainedUpperBound"));
 #     
 
                      
-yT = optRes[:,:,Time-1];                           
-print "Solving dynamic programming problem of unconstrained problem"; 
-#cR = mdp.constrainedReward3D(sGame("reward"),
-#                             sGame("optDual") + 0.01, # make dual the interiors
-#                             sGame("constrainedState"));                           
-dpVC, dpSolC = dp.dynamicPLinearCost(sGame("reward"),
-                                     sGame("probability"),
-                                     optRes,
-                                     0.001*p0, 
-                                     hasToll = True,
-                                     toll = sGame("optDual") + 0.01, 
-                                     tollState = 6);
+#yT = optRes[:,:,Time-1];                           
+#print "Solving dynamic programming problem of unconstrained problem"; 
+##cR = mdp.constrainedReward3D(sGame("reward"),
+##                             sGame("optDual") + 0.01, # make dual the interiors
+##                             sGame("constrainedState"));                           
+#dpVC, dpSolC = dp.dynamicPLinearCost(sGame("reward"),
+#                                     sGame("probability"),
+#                                     optRes,
+#                                     0.001*p0, 
+#                                     hasToll = True,
+#                                     toll = sGame("optDual") + 0.01, 
+#                                     tollState = 6);
                                      
                                      
 #optTraj_old = np.einsum("ijk->ik", optCSol); 

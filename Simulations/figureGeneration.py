@@ -80,4 +80,4 @@ def NeighbourGen(draw = True):
 #    labels[11]=r'Green Lake'
 #    labels[12]=r'Ravenna'
 #    nx.draw_networkx_labels(G,nodePos,labels,font_size=16)
-    return nodePos, G;
+    return nodePos, G, distances;

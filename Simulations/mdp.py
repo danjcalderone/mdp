@@ -221,8 +221,22 @@ def generateMDP(v,a,G, p =0.9):
     c[6] = 0.;
 
     return P,c
-    
-def generateQuadMDP(v,a,G, p =0.9):
+def getDistance(node1, node2, dictionary):
+    if node1 == node2:
+        return 0.0;
+    elif node1 < node2:
+        a = node1; b = node2;
+    else: 
+        a = node2; b = node1;
+    return dictionary[(a,b)]; 
+def getExpectedDistance(node, G, dictionary):
+    neighbours = list(G.neighbors(node));
+    totalDistance = 0.;
+    for neighbour in neighbours:
+        totalDistance += getDistance(node, neighbour, dictionary);
+    return totalDistance/len(neighbours);
+        
+def generateQuadMDP(v,a,G,distances, p =0.9):
     """
     Generates a random MDP with finite sets X and U such that |X|=S and |U|=A.
     each action will take a state to one of its neighbours with p = 0.7
@@ -262,7 +276,7 @@ def generateQuadMDP(v,a,G, p =0.9):
         for neighbour in neighbours: # neighbour = x_next
             neighbourInd = neighbour - 1;
             P[neighbourInd,node,actionIter] = p;
-            c[node, actionIter] = -100.;
+            c[node, actionIter] = -getDistance(neighbour,nodeInd, distances);
             d[node, actionIter] = 0; # indedpendent of congestion
             # chance of ending somewhere else
             for scattered in neighbours:
@@ -277,8 +291,8 @@ def generateQuadMDP(v,a,G, p =0.9):
             actionIter += 1;        
         while actionIter < a:  # chances of staying still      
             P[node, node, actionIter] = 1.0;
-            c[node, actionIter] = 100.; # constant offset 
-            d[node,actionIter] = 2.7 *actionIter; # dependence on current density
+            c[node, actionIter] = getExpectedDistance(nodeInd,G,distances)*0.1; # constant offset 
+            d[node,actionIter] = 68.*actionIter; # dependence on current density
 #            P[node, node, actionIter] = p;
 #            pNot = (1.-p)/(totalN);
 #            for scattered in neighbours: 

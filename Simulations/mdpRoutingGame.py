@@ -78,12 +78,13 @@ class mdpRoutingGame:
                 self.R[:,:,t] = 1.0*c;
         # seattle graph
         elif graph.type is "seattleQuad":
-            self.graphPos, self.G =  fG.NeighbourGen(False);
+            self.graphPos, self.G, distances =  fG.NeighbourGen(False);
             self.States = self.G.number_of_nodes();
             self.Actions = len(nx.degree_histogram(self.G));
             self.P, c, d = mdp.generateQuadMDP(self.States,
                                         self.Actions,
-                                        self.G)
+                                        self.G,
+                                        distances)
             self.R = np.zeros((self.States,self.Actions,Time));
             self.C = np.zeros((self.States,self.Actions,Time));
             for t in range(Time):
@@ -98,6 +99,8 @@ class mdpRoutingGame:
             return self.optimalDual;
         elif var is "reward":
             return self.R;
+        elif var is "C":
+            return self.C;
         elif var is "constrainedState":
             return self.constrainedState;
         elif var is "constrainedUpperBound":
