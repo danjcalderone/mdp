@@ -1,0 +1,124 @@
+\section{Problem Formulation}\label{problemFormulation}
+
+\subsection{Markov decision processes}
+Consider the following linear programming formulation of finite horizon MDP \cite{puterman2014markov}
+\begin{equation}
+\begin{aligned}
+\underset{\substack{y_t\\t\in\mathcal{T}}}{\mbox{min.}} & \sum\limits_{t\in\mathcal{T}}\sum\limits_{s\in\mathcal{S}} \sum\limits_{a\in\mathcal{A}} y_t(s, a)c_t(s, a)\\
+\mbox{s.t.} &\sum\limits_{a\in\mathcal{A}} y_{t+1}(s', a) = \sum\limits_{s\in\mathcal{S}}\sum\limits_{a\in\mathcal{A}}\Gamma(s'\mid s, a)y_t(s, a),\\
+&\sum\limits_{a\in\mathcal{A}}y_0(s, a)=p_0(s),\\
+&y_t(s, a)\geq 0,\quad \forall s, s'\in\mathcal{S}, a\in\mathcal{A}, t\in\mathcal{T}
+\end{aligned}\label{MDP}
+\end{equation}
+where \(\mathcal{S}\) and \(\mathcal{A}\) denote respectively the set of states and actions, \(\mathcal{T}=\{0, \ldots, |\mathcal{T}|\}\) denote the time step, \(y_t(s, a)\) and \(c_t(s, a)\) denote respectively the probability and cost of state-action pair \((s, a)\), \(\Gamma(s'|s, a)\) denotes transition probability from state \(s\) to state \(s'\) given action \(a\), \(p_0(s)\) denotes the probability that the decision processes starts from state \(s\). 
+Notice that the initial and dynamics constraints in \eqref{MDP} implies that
+\begin{equation*}
+\begin{aligned}
+\sum\limits_{s\in\mathcal{S}} y_0(s, a)=&\sum\limits_{s\in\mathcal{S}}p_0(s)=1,\\
+\sum\limits_{s'\in\mathcal{S}} y_{t+1}(s', a)=&\sum\limits_{s'\in\mathcal{S}}\sum\limits_{s\in\mathcal{S}}\sum\limits_{a\in\mathcal{A}}\Gamma(s'\mid s, a)y_t(s, a)\\
+=&\sum\limits_{s\in\mathcal{S}}\sum\limits_{a\in\mathcal{A}}y_t(s, a).
+\end{aligned}\label{nomalization}
+\end{equation*}
+Hence by induction we know that the nomalization constraints on \(y_t(s, a)\) are automatically satisfied for all \(t\in\mathcal{T}\). 
+
+The KKT conditions of problem \eqref{MDP} are composed of three components: primal and dual feasibility
+\begin{equation}
+\begin{aligned}
+\sum\limits_{a\in\mathcal{A}} y_{t+1}(s', a) = &\sum\limits_{s\in\mathcal{S}}\sum\limits_{a\in\mathcal{A}}\Gamma(s'\mid s, a)y_t(s, a),\\
+\sum\limits_{a\in\mathcal{A}}y_0(s, a)=&p_0(s),\\
+y_t(s, a)\geq & 0\\
+\mu_t(s, a)\geq & 0,  
+\end{aligned}\label{MDP: primal dual feasibility}
+\end{equation}
+ complementary slackness
+\begin{equation}
+\mu_t(s, a)y_t(s, a)=0\label{MDP: complementary slackness}
+\end{equation}
+and vanishing gradient
+\begin{equation}
+\begin{aligned}
+V_T(s)=&c_T(s, a)-\mu_T(s, a),\\
+V_t(s)=&c_t(s, a)+\sum\limits_{s'\in\mathcal{S}}\Gamma(s'\mid s, a) V_{t+1}(s')\\
+&-\mu_t(s, a),
+\end{aligned}\label{MDP: vanishing gradient}
+\end{equation}
+It is straightforward to verify that the following \emph{value iteration} satisfies conditions in \eqref{MDP: complementary slackness} and\eqref{MDP: vanishing gradient} simultaneously,
+\begin{equation}
+\begin{aligned}
+V_T(s)=&\underset{a\in\mathcal{A}}{\min.} \,\,c_T(s, a)\\
+V_t(s)=&\underset{a\in\mathcal{A}}{\min.} \,\, c_t(s, a)+\sum\limits_{s'\in\mathcal{S}}\Gamma(s'\mid s, a) V_{t+1}(s')
+\end{aligned}\label{MDP: value iteration}
+\end{equation}
+If we define the \(Q\)-value function for a state-action pair \((s, a)\) as
+\begin{equation}
+\begin{aligned}
+Q_T(s, a)=&c_T(s, a)\\
+Q_t(s, a)=& c_t(s, a)+\sum\limits_{s'\in\mathcal{S}}\Gamma(s'\mid s, a) \underset{a\in\mathcal{A}}{\min}\,\,Q_{t+1}(s', a)
+\end{aligned}\label{MDP: Q value iteration}
+\end{equation}
+Then the dual variable \(\mu_t(s, a)\) gives the inefficiency of \(Q_t(s, a)\), \ie ,
+\[\mu_t(s, a)=Q_t(s, a)-V_t(s, a).\]
+
+\subsection{Markov decision processes with density and flow rate constraints}
+Consider the following constrained Markov decision processes
+\begin{equation}
+\begin{aligned}
+\underset{\substack{y_t\\ t\in\mathcal{T}}}{\mbox{min.}} & \sum\limits_{t\in\mathcal{T}}\sum\limits_{s\in\mathcal{S}} \sum\limits_{a\in\mathcal{A}} y_t(s, a)c_t(s, a)\\
+\mbox{s.t.} &\sum\limits_{a\in\mathcal{A}} y_{t+1}(s', a) = \sum\limits_{s\in\mathcal{S}}\sum\limits_{a\in\mathcal{A}}\Gamma(s'\mid s, a)y_t(s, a),\\
+&\sum\limits_{a\in\mathcal{A}}y_0(s, a)=p_0(s),\\
+&y_t(s, a)\geq 0,\\
+&\underline{p}_t(s)\leq\sum\limits_{a\in\mathcal{A}}y_t(s, a)\leq\overline{p}_t(s),\\
+&\underline{r}_{t}(s)\leq\sum\limits_{a\in\mathcal{A}}(y_{t+1}(s, a)-y_{t}(s, a))\leq \overline{r}_{t}(s),\\
+&\forall s, s'\in\mathcal{S}, a\in\mathcal{A}, t\in\mathcal{T}
+\end{aligned}\label{constrained MDP}
+\end{equation}
+where \([\underline{p}_t(s), \overline{p}(s)]\) and \([ \underline{r}_t(s),  \overline{r}_t(s)]\) denote respectively the desired interval of population and flow rate in state \(s\).  The KKT conditions of problem \eqref{constrained MDP} is as follows. Primal and dual feasibility: in addition to  \eqref{MDP: primal dual feasibility} we have the following
+\begin{equation}
+\begin{aligned}
+\underline{\tau}_t(s)\geq 0,\overline{\tau}_t(s)\geq 0 \quad \underline{\delta}_t(s)\geq 0, \overline{\delta}_t(s)\geq 0,
+\end{aligned}\label{consMDP: primal dual feasibility}
+\end{equation}
+complementary slackness: in addition to \eqref{MDP: complementary slackness}, we have the following
+\begin{equation}
+\begin{aligned}
+&\overline{\tau}_t(s)\left(\sum\limits_{a\in\mathcal{A}}y_t(s, a)\right)=\overline{\tau}_t(s)\overline{p}_t(s),\\
+&\underline{\tau}_t(s)\left(\sum\limits_{a\in\mathcal{A}}y_t(s, a)\right)=\underline{\tau}_t(s)\underline{p}_t(s),\\
+&\overline{\delta}_{t+1}(s)\left(\sum\limits_{a\in\mathcal{A}}(y_{t+1}(s, a)-y_t(s, a))-\overline{r}_{t}(s)\right)=0,\\
+&\underline{\delta}_{t+1}(s)\left(\underline{r}_{t}(s)-\sum\limits_{a\in\mathcal{A}}(y_{t+1}(s, a)-y_t(s, a))\right)=0,
+\end{aligned}\label{consMDP: complementary slackness}
+\end{equation}
+and vanishing gradient
+\begin{equation}
+\begin{aligned}
+V_T(s)=&c_T(s, a)-\mu_T(s, a)+\overline{\tau}_T(s)-\underline{\tau}_T(s)\\
+&+\overline{\delta}_{T}(s)-\underline{\delta}_{T}(s),\\
+V_t(s)=&c_t(s, a)+\sum\limits_{s'\in\mathcal{S}}\Gamma(s'\mid s, a) V_{t+1}(s')\\
+&-\mu_t(s, a)+\overline{\tau}_t(s)-\underline{\tau}_t(s)\\
+&+(\overline{\delta}_{t}(s)-\overline{\delta}_{t+1}(s))-(\underline{\delta}_{t}(s)-\underline{\delta}_{t+1}(s)).
+\end{aligned}\label{consMDP: vanishing gradient}
+\end{equation}
+
+\begin{theorem}[Exact penalty]\cite[Prop. 5.4.5]{bertsekas1999nonlinear}
+Let \(y_t^\star, \mu_t^\star, V_t^\star, \overline{\tau}_t^\star, \underline{\tau}_t^\star, \overline{\delta}_t^\star, \underline{\delta}_t^\star\) satisfy the KKT conditions \eqref{MDP: primal dual feasibility}, \eqref{MDP: complementary slackness}, \eqref{consMDP: primal dual feasibility}, \eqref{consMDP: complementary slackness} and \eqref{consMDP: vanishing gradient}. The solutions to problem \eqref{constrained MDP} are the same as the follow optimization problem 
+\begin{equation}
+\begin{aligned}
+\displaystyle
+\underset{\substack{y_t\\t\in\mathcal{T}}}{\mbox{min.}} & \sum\limits_{t\in\mathcal{T}}\sum\limits_{s\in\mathcal{S}} \sum\limits_{a\in\mathcal{A}} y_t(s, a)c_t(s, a)\\
++&\sum_{s\in\mathcal{S}}\left(\overline{\tau}_t(s)\left[\sum_{a\in\mathcal{A}}y_t(s, a)-\overline{p}_t(s)\right]_+\right.\\
++&\underline{\tau}_t(s)\left[\underline{p}_t(s)-\sum_{a\in\mathcal{A}}y_t(s, a)\right]_+\\
++&\overline{\delta}_t(s)\left[\sum_{a\in\mathcal{A}}(y_{t+1}(s, a)-y_t(s, a))-\overline{r}_t(s)\right]_+\\
++&\left.\underline{\delta}_t(s)\left[\underline{r}_t(s)-\sum_{a\in\mathcal{A}}(y_{t+1}(s, a)-y_t(s, a))\right]_+\right)\\
+\mbox{s.t.} &\sum\limits_{a\in\mathcal{A}} y_{t+1}(s', a) = \sum\limits_{s\in\mathcal{S}}\sum\limits_{a\in\mathcal{A}}\Gamma(s'\mid s, a)y_t(s, a),\\
+&\sum\limits_{a\in\mathcal{A}}y_0(s, a)=p_0(s),\\
+&y_t(s, a)\geq 0,\quad \forall s, s'\in\mathcal{S}, a\in\mathcal{A}, t\in\mathcal{T}
+\end{aligned}\label{exact penalty MDP}
+\end{equation}
+where
+\begin{equation}
+\begin{aligned}
+&\overline{\tau}_t(s)> \overline{\tau}^\star_t(s),\quad \underline{\tau}_t(s)> \underline{\tau}^\star_t(s),\\
+&\overline{\delta}_t(s)> \overline{\delta}^\star_t(s), \quad \underline{\delta}_t(s)> \underline{\delta}^\star_t(s).
+\end{aligned}
+\end{equation}
+
+\end{theorem}

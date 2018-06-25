@@ -1,0 +1,46 @@
+\section{Unknown Initial Distribution}
+
+(I believe this is the the most general way to constrain the policy to maintain safety in the MDP.)
+
+I think we want to solve the following problem for all $t' = 0,\dots,T$.
+
+\begin{align}
+\max_{y,p_{t'}} & \quad \sum_{s} \sum_{a} \Gamma_{t'}(s'|s,a) K_{t'}(s,a)p_{t'}(s) \\
+\text{s.t.} & \quad \sum_s \sum_a y_0(s,a) = 1 \notag \\
+& \quad \sum_a y_{t+1}(s',a) = \sum_{s \in \mathcal{S}} \sum_{a \in \mathcal{A}} \Gamma_t(s'|s,a) y_t(s,a) \notag \\
+& \qquad \qquad \qquad \qquad \qquad \qquad t = 0,\dots,t'-1  \notag \\
+& \quad \sum_a y_{t'}(s,a) = p_{t'}(s) \notag \\
+& \quad 0 \leq y_t(s,a) \leq d_t(s,a) \qquad t=0,\dots,t' \notag
+\end{align}
+
+We want to get a bound for the maximum amount of mass in state $s^*$.  
+\begin{align}
+\min & \quad \lambda + \sum_t\sum_s\sum_a d_t(s,a)\tau_t(s,a) \\
+\text{s.t.} & \quad \lambda = V_0(s)+\tau_0(s,a) \qquad \qquad \qquad \forall s \in \mathcal{S} \notag \\
+& \quad V_t(s') = \sum_s \Gamma_t(s'|s,a)\Big(V_{t+1}(s)+\mu_t(s,a)\Big)+\tau_t(s,a) \notag \\
+& \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \forall a \in \mathcal{A} \notag \\
+& \quad V_{t'} = \sum_a \Gamma_{t'}(s^*|s,a)K_{t'}(s,a) + \tau_{t'}(s,a) \notag
+\end{align}
+
+
+\section{Useless Stuff}
+
+We now consider the case where the initial distribution is not known a-priori but rather only constrained to be within some set.  We assume $p_0 \in \mathcal{P}_0$.  We first consider box capacity constraints on $p_0 \leq d_0$ and defining the least conservative constant constraints on the policy that keep the set invariant.  Set $\bar{d}_0 = d_0$. Let $\bar{d}_t$ be upper bounds on the state distribution at time $t$.  We now derive bounds on the entries of $K_t(s,a)$.  If the constraint at the next time step 
+\begin{align}
+d_{t+1}(s')= \Gamma_t(s'|s,a)K_t(s,a)\bar{d}_t(s)
+\end{align}
+\begin{align}
+K_t(s,a) = 
+\frac{d_{t+1}(s')}{\Gamma_t(s'|s,a)\bar{d}_t(s)}
+\end{align}
+\begin{align}
+D_t(s,a) = \min \left\{\min_{s'}
+\frac{d_{t+1}(s')}{\Gamma_t(s'|s,a)\bar{d}_t(s)},1
+\right\}
+\end{align}
+\begin{align}
+\bar{d}_{t+1}(s') = \max_{y_t} & \quad \sum_s \sum_a \Gamma_t(s'|s,a)y_t(s,a) \\ 
+\text{s.t.}& \quad \sum_a y_t(s,a) \leq \bar{d}_t(s) \notag \\
+& \quad \sum_{s,a} y_t(s,a) = 1 \notag \\
+& \quad y_t(s,a) \leq \text{diag}(y_t\mathbf{1})D_t(s,a) \notag
+\end{align}

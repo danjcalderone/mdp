@@ -1,0 +1,13 @@
+\section{Introduction}
+\cite{altman1999constrained}
+Although a single population congestion game has been extensively analyzed(CITATION), we adopt the perspective of a global planner to enforce state space constraints without altering individual agent's behaviour. \newline
+
+\textbf{Other's work}: What have others done in this? \newline
+
+In order to enforce global constraints, we treat the routing game as a finite horizion, potential mean-field game that can be solved with a Markov Decision Process(MDP). Using the game reward as planner's control, it can be shown that state constraints can be reformulated as rewards, which in turn motivate game players to achieve a Wardrop Equilibrium that satisfies the constraints. 
+
+In particular, we reformulate state space constraints as a toll or flow based congestion control. Interestingly, it can be shown that a flow based control will not satisfy any state-space constraint by itself. The tolls are then applied to two scenarios: 
+\begin{enumerate}
+\item Ride-share drivers attempting to maximize individual monetary return.
+\item Parking scenario where all drivers are attempting to park as quickly as possible. 
+\end{enumerate}

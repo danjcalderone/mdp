@@ -1,0 +1,44 @@
+%% This is a skeleton file to create IEEE style Bibliography list. There is a guide added "create-manual-bib-entry.txt" to manually create popular types of references such as PhD thesis, website, unpublished work etc.
+%%
+%% Modified by K. Reaz( kahn.reaz@ieee.org)
+%% Support sites:
+%% http://www.ieee.org/
+
+%%***********************************************************
+%% Legal Notice:
+%% This code is offered as-is without any warranty either expressed or implied; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE! 
+%% User assumes all risk and can modify as s/he wants.
+
+%%***********************************************************
+
+%package list
+\documentclass[conference]{IEEEtran}
+\usepackage{cite}
+\let\proof\relax
+\let\endproof\relax
+\usepackage{fullpage,psfrag,amsthm,amsmath,amsfonts,verbatim, mathtools,enumerate,algorithm,algorithmic}
+\usepackage{oubraces}
+\usepackage{diagbox}
+\usepackage{subfig}
+\allowdisplaybreaks[2]
+\input defs.tex
+
+
+\begin{document}
+%Here goes the title
+\title{Tolling for MDP Congestion Games}
+\author{authors}
+\maketitle
+
+%Main body starts
+\input{introduction}
+\input{notation}
+\input{problemFormulation}
+\input{convergence}
+\input{examples}
+\input{conclusion}
+
+\bibliographystyle{IEEEtran}
+\bibliography{reference}
+
+\end{document}
