@@ -9,6 +9,30 @@ import numpy as np
 import cvxpy as cvx
 import matplotlib.pyplot as plt
 import networkx as nx
+
+
+class parameters:
+    def __init__(self):
+        self.tau = 27.  # $/hr
+        self.vel = 8. # mph
+        self.fuel = 28. # $/gal
+        self.fuelEff = 20. # mi/gal
+        self.rate = 6. # $/mi
+        
+sDEMAND = np.array([50 , 
+                    100,
+                    30 ,
+                    120,
+                    30 ,
+                    80 ,
+                    80 ,
+                    20 ,
+                    20 ,
+                    70 ,
+                    20 ,
+                    20 ])  ;               
+                                    
+                                    
 # ----------generate new constrained reward based on exact penalty-------------
 # (for 2D reward matrix)
 def constrainedReward2D(c,toll,constrainedState, time):
@@ -43,16 +67,16 @@ def drawOptimalPopulation(time,pos,G,optRes, is2D = False,
     #ax = plt.axes(xlim=(0, 2), ylim=(-2, 2))
     #line, = ax.plot([], [], lw=2)
     iStart = -5;
-    mag = 1000;
+    mag = 80000;
     cap = mag* np.ones(v);  
-    if(constrainedState != None):
-        # Draw the red circle
-        cap[constrainedState]= cap[constrainedState]*(constrainedUpperBound+0.3); 
+#    if(constrainedState != None):
+#        # Draw the red circle
+#        cap[constrainedState]= cap[constrainedState]*(constrainedUpperBound+0.3); 
     nx.draw(G, pos=pos, node_color='w',with_labels=True, font_weight='bold');
-    nx.draw_networkx_nodes(G,pos,node_size=3.2/3*cap,node_color='r',alpha=1);
-    if(constrainedState != None):
-        # Draw the white circle
-        cap[constrainedState]= cap[constrainedState]*(constrainedUpperBound+ 0.2); 
+#    nx.draw_networkx_nodes(G,pos,node_size=3.2/3*cap,node_color='r',alpha=1);
+#    if(constrainedState != None):
+#        # Draw the white circle
+#        cap[constrainedState]= cap[constrainedState]*(constrainedUpperBound+ 0.2); 
     dontStop = True; 
     try:
         
@@ -75,10 +99,10 @@ def drawOptimalPopulation(time,pos,G,optRes, is2D = False,
                 else:   
                     frame = np.einsum('ij->i', optRes[:,:,i]);
             if startAtOne:
-                nodesize=[frame[f-1]*mag for f in G];
+                nodesize=[frame[f-1]*frame[f-1]*mag for f in G];
             else:
                 nodesize=[frame[f]*frame[f]*mag for f in G];
-            nx.draw_networkx_nodes(G,pos,node_size=cap,node_color='w',alpha=1)
+            nx.draw_networkx_nodes(G,pos,node_size=cap/30.,node_color='w',alpha=1)
             nx.draw_networkx_nodes(G,pos,node_size=nodesize,node_color='c',alpha=1)  
         except KeyboardInterrupt:
             dontStop = False;
@@ -264,19 +288,24 @@ def generateQuadMDP(v,a,G,distances, p =0.9):
     
     debug = False;
     P= np.zeros((v,v,a)); c = np.zeros((v,a)); d = np.zeros((v,a))
+    sP = parameters();
+    # reward constant for going somewhere else
+    kGo = sP.tau/sP.vel + sP.fuel/sP.fuelEff;
     for node in range(v):#x_now = node
         nodeInd = node+1;
         neighbours = list(G.neighbors(nodeInd));
         totalN = len(neighbours);
+        evenP = 1./(totalN +1); # even probability of ending up somewhere when picking up
         # chance of not reaching action
         pNot = (1.-p)/(totalN);
         actionIter = 0;
         if debug: 
             print neighbours;
         for neighbour in neighbours: # neighbour = x_next
+            # ACTION = going somewhere else
             neighbourInd = neighbour - 1;
             P[neighbourInd,node,actionIter] = p;
-            c[node, actionIter] = -getDistance(neighbour,nodeInd, distances);
+            c[node, actionIter] = -kGo*getDistance(neighbour,nodeInd, distances);
             d[node, actionIter] = 0; # indedpendent of congestion
             # chance of ending somewhere else
             for scattered in neighbours:
@@ -289,15 +318,18 @@ def generateQuadMDP(v,a,G,distances, p =0.9):
             # some probability of staying stationary
             P[node,node,actionIter] =pNot;
             actionIter += 1;        
-        while actionIter < a:  # chances of staying still      
-            P[node, node, actionIter] = 1.0;
-            c[node, actionIter] = getExpectedDistance(nodeInd,G,distances)*0.1; # constant offset 
-            d[node,actionIter] = 68.*actionIter; # dependence on current density
+        while actionIter < a:  
+            # ACTION  = picking up rider
+            P[node, node, actionIter] = evenP;
+            for scattered in neighbours: 
+                scatteredInd = scattered -1;
+                P[scatteredInd,node,actionIter] = evenP;
+                
+            c[node, actionIter] = (sP.rate - kGo)*getExpectedDistance(nodeInd,G,distances); # constant offset 
+            d[node,actionIter] = sP.tau/sDEMAND[node]; # dependence on current density
 #            P[node, node, actionIter] = p;
 #            pNot = (1.-p)/(totalN);
-#            for scattered in neighbours: 
-#                scatteredInd = scattered -1;
-#                P[scatteredInd,node,actionIter] = pNot;
+
             actionIter += 1;
     # test the cost function
 #    c = 1000.*np.ones((v,a))

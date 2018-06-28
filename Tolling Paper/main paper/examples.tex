@@ -1,5 +1,5 @@
-\section{Numerical examples}\label{numerical examples}
-
+\section{Numerical example}\label{numerical examples}
+SUMMARY: This is a thorough example where we are trying to capture as much of the ride sharing dynamics as possible. 
 \subsection{Simulation: Ride-sharing game}
 \label{sec:rideshare}
 
@@ -90,6 +90,31 @@ Rate  & Velocity & Fuel Price & Fuel Eff   \\
 %\label{tab:values}
 \end{center}
 
+We compute both the equilibrium strategies and the socially optimal strategies in the infinite horizon game.  Figure \ref{fig:nodesinf} shows the steady state distribution of drivers at the nodes in both cases including the portion that take riders and the portion that do not as well as the transitions that drivers make without riders. 
+
+\begin{figure}
+\center
+\subfloat[\label{fig:nodesinfeq}]{\includegraphics[width=0.23\textwidth]{figs/unconstrainedSeattleQuadGame}
+} 
+\subfloat[\label{fig:nodesinfsoc}]{\includegraphics[width=0.23\textwidth]{figs/constrainedSeattleQuadGame}
+}
+%\\
+%\subfloat[\label{fig:noriderseq}]{\includegraphics[width=0.25\textwidth]{figs/noriderseq.png}
+%}
+%\subfloat[\label{fig:noriderssoc}]{\includegraphics[width=0.25\textwidth]{figs/noriderssoc.png}
+%}
+\caption{Steady state distribution of drivers at each node under the (a) equilibrium strategies and (b) socially optimal strategies showing the portion of drivers that take riders and the portion that do not take riders.   
+Drivers transitioning between nodes without riders in the (c) equilibrium case and (d) under the socially optimal strategies. }
+\label{fig:nodesinf}
+\end{figure}
+\begin{figure}
+\center
+\subfloat[\label{fig:nodesinfeq}]{\includegraphics[width=0.5\textwidth]{figs/state7}
+} 
+\caption{Time profile of state 7 in unconstrained optimal solution and unconstrained optimal solution with exact penalty}
+\label{fig:state7}
+\end{figure}
+
 % We compute both the equilibrium strategies and the socially optimal strategies in the infinite horizon game.  Figure \ref{fig:nodesinf} shows the steady state distribution of drivers at the nodes in both cases including the portion that take riders and the portion that do not as well as the transitions that drivers make without riders.  % without riders Figure \ref{fig:noriders} shows the the portion of the population that is making transitions without riders.  Interestingly, the socially optimal strategies involve more drivers making trips without riders.  
 % \begin{figure}
 % \center
@@ -109,115 +134,115 @@ Rate  & Velocity & Fuel Price & Fuel Eff   \\
 
 
 
-\subsection{Circling for parking}
-\label{sec:circling}
+% \subsection{Circling for parking}
+% \label{sec:circling}
 
-Another application of this model is determining the optimal strategies for urban drivers looking for places to park.  A sample set of city blocks shown in Figure \ref{fig:dualnums}.  We solve the problem on the dual graph as it allows us more freedom to restrict certain transitions (left turns, U-turns, etc.).  The actions associated with each state are either park, $a_p$, or make one one of the allowed turns stipulated in the following table (dependent on the intersection).
-\begin{center}
-\begin{tabular}{|c|cccc|}
-\hline
-Park & Straight & L-turn & R-turn & U-turn \\
-\hline
-$a_p$ & $a_s$ & $a_l$ & $a_r$ & $a_u$ \\
-\hline
-\end{tabular}
-\end{center}
-
-
-
-% of the allowed turn  actionsWe write down a reward function for each node (block face) that represents the expected waiting time to find an open space.  %The loss for transitioning from block face $j$ to block face $i$ is the loss experienced on block face $i$.  
-%Figure \ref{fig:dualgraph} shows the graph abstraction of several block faces.  We treat streets as nodes rather than intersection since it allows greater control over which turns drivers are allowed to make.  
+% Another application of this model is determining the optimal strategies for urban drivers looking for places to park.  A sample set of city blocks shown in Figure \ref{fig:dualnums}.  We solve the problem on the dual graph as it allows us more freedom to restrict certain transitions (left turns, U-turns, etc.).  The actions associated with each state are either park, $a_p$, or make one one of the allowed turns stipulated in the following table (dependent on the intersection).
+% \begin{center}
+% \begin{tabular}{|c|cccc|}
+% \hline
+% Park & Straight & L-turn & R-turn & U-turn \\
+% \hline
+% $a_p$ & $a_s$ & $a_l$ & $a_r$ & $a_u$ \\
+% \hline
+% \end{tabular}
+% \end{center}
 
 
 
-
-%
-%
-%\begin{figure}
-%\begin{center}
-%\includegraphics[scale=0.4]{mdp/figs/dualnums.png}
-%\caption{Block faces and allowed transitions.}
-%\label{fig:dualnums}
-%\end{center}
-%\end{figure}
-%
-
-The expected waiting time for a given member of the population is related to the rate at which spots become available and the probability that a driver will park given there is a parking spot open.  This last component depends on the number of other drivers on the block face.  For the probability of finding an empty spot, we draw inspiration from a queuing model where customers are selected randomly from a queue.  Each block face $s$ has $c_s$ spots and each spot becomes available at a rate of $\gamma_s$ (in units of car/min).  The total cost of driving by each block face is given by
-\begin{align}
-R_t[s,\ell_j(x) & = M_{j} p_j + \Big((C_j)_\text{wait}+M_j \Big) (1 - p_j)
-%R_{ij}(x) & = - (C_{ij})_{\text{trans}} - M_{i} p_i - (C_i)_\text{wait} (1 - p_i)
-\end{align}
-%Here $(C_{ij})_{\text{trans}}$ depends on the characteristics of the intersection, whether the transition is a right or left turn, whether it is a stop sign or traffic light, etc.  
-Here, $M_j$ is the cost of parking and $(C_j)_\text{wait}$ is the cost of waiting for a space which we take to be the $(C_j)_\text{wait} = \tau\Delta t_j$ where $\tau$ is a time vs. money tradeoff parameter and $\Delta t_j$ is the average amount of time spent on block face $j$.  The 
-probability of an individual driver getting a parking spot, $p_j$, is given by
-\begin{align}
-p_j & = \Big(1-e^{-c_j\gamma_j \Delta t_j}\Big) \frac{1}{1+x_j} %\sum_j x_{ij}} 
-\end{align}
-This equation consists of two parts.  The first is the probability that a space opens up in the time the driver spends on the block face.  The second part is the probability that an individual driver of the population on the edge gets that space.  This second term is 1 when there is 0 mass on the edge, $\frac{1}{2}$ when there is a mass of 1 other driver on the edge, $\frac{1}{3}$ when there is a mass of 2 other drivers on the edge, etc.  
-
-The full loss function can be rewritten as
-\begin{align}
-\ell_j(x) = 
-%l_{ij}(x)  = l_i(x) = 
-\underbrace{
-\Big(M_j + (C_j)_\text{wait}\Big)
-}_{a_j} 
-\underbrace{-
-(C_j)_\text{wait}\Big(1-e^{-c_j\gamma_j \Delta t_j}\Big)
-}_{b_j}
-\frac{1}{1+ x_j} %\sum_j x_{ij}}
-%R_{ij}(x)  = - (C_{ij})_{\text{trans}} - (C_i)_\text{wait}  + \Bigg((C_i)_\text{wait}-M_{i}\Bigg)\frac{1-e^{-c_i\mu_i \Delta t_i}}{\sum_j x_{ij}}
-\end{align}
-%We note that it is important for $M_i > (C_i)_\text{wait}$, otherwise no one would want to park.  
-The potential function is then given by
-\begin{align}
-%F(x) & = \sum_j \int_0^{\sum_j x_{ij}} l_i(u) \ du \\
-%F(x) & = \sum_j \left[ a_i \sum_j x_{ij} + b_i \ln\left(1+\sum_j x_{ij} \right)\right]
-F(x) = \sum_j \int_0^{x_j} \ell_j(u) \ du 
-= \sum_j \bigg[ a_j x_j + b_i \ln\big(1+x_j \big)\bigg]
-\end{align}
-We use the following parameter values (Table. \ref{commonParamVal}) for all streets, while the number of parking spaces are given by Table. \ref{spaceParam}.
-\begin{center}\label{commonParamVal}
-\begin{tabular}{|cccc|}
-\hline
-$\Delta t_j $ (min)  & $\gamma_j$ (1/hr) & $M_j$ (\$) & $\tau$ ($\$$/min) \\
-\hline
-0.5 &  1/120 &  5 & 0.5\\
-\hline
-\end{tabular}
-\end{center}
+% % of the allowed turn  actionsWe write down a reward function for each node (block face) that represents the expected waiting time to find an open space.  %The loss for transitioning from block face $j$ to block face $i$ is the loss experienced on block face $i$.  
+% %Figure \ref{fig:dualgraph} shows the graph abstraction of several block faces.  We treat streets as nodes rather than intersection since it allows greater control over which turns drivers are allowed to make.  
 
 
-\begin{center}\label{spaceParam}
-\begin{tabular}{|c|ccccccc|}
-\hline
-Street & 
-1-6 & 7-8 & 9-10 & 11-14 & 15-16 & 17-18 & 19 -24 \\
-\hline
-Num. spaces $(c_j)$ &
-20 & 10 & 20 & 10 & 20 & 10 & 20 \\
-\hline
-\end{tabular}
-\end{center}
-The streets are numbered in Figure \ref{fig:dualnums}.  
 
-% We consider this game in the infinite horizon case with deterministic transitions.  In Figure \ref{fig:circles}, we look at the traffic distribution at the Wardrop equilibrium, at the social optimum, and when the population members use a uniform turning strategy.  We note that one application of this model could be determining how to vary parking prices between streets in order to improve congestion since even in this simple scenario the Nash solution is suboptimal.  We also note that a model like this could be integrated with the queue-routing game developed in Chapter \ref{chap:park} to provide a more sophisticated model of parking behavior.  
 
-\begin{figure*}
-\center
-\subfloat[\label{fig:dualnums}]{\includegraphics[width=0.45\textwidth]{figs/dualnums.pdf}}
-\hspace{0.1in}
-\subfloat[\label{fig:circlenash}]{\includegraphics[width=0.45\textwidth]{figs/circle_nash.pdf}}
-\\
-\subfloat[\label{fig:circlesoc}]{\includegraphics[width=0.45\textwidth]{figs/circle_soc.pdf}}
-\hspace{0.1in}
-\subfloat[\label{fig:circleunif}]{\includegraphics[width=0.45\textwidth]{figs/circle_unif.pdf}}
-\hspace{0.1in}
-\subfloat[]{\includegraphics[width=0.05\textwidth]{figs/circle_scale.png}}
-\caption{(a) Block faces and allowed transitions. (b) Wardrop equilibrium.  (c) Social optimum.  (d) Uniform turns.  (e) Scale (cars).}
-\label{fig:circles}
-%    \label{fig:amgrids}
- \end{figure*}
+% %
+% %
+% %\begin{figure}
+% %\begin{center}
+% %\includegraphics[scale=0.4]{mdp/figs/dualnums.png}
+% %\caption{Block faces and allowed transitions.}
+% %\label{fig:dualnums}
+% %\end{center}
+% %\end{figure}
+% %
+
+% The expected waiting time for a given member of the population is related to the rate at which spots become available and the probability that a driver will park given there is a parking spot open.  This last component depends on the number of other drivers on the block face.  For the probability of finding an empty spot, we draw inspiration from a queuing model where customers are selected randomly from a queue.  Each block face $s$ has $c_s$ spots and each spot becomes available at a rate of $\gamma_s$ (in units of car/min).  The total cost of driving by each block face is given by
+% \begin{align}
+% R_t[s,\ell_j(x) & = M_{j} p_j + \Big((C_j)_\text{wait}+M_j \Big) (1 - p_j)
+% %R_{ij}(x) & = - (C_{ij})_{\text{trans}} - M_{i} p_i - (C_i)_\text{wait} (1 - p_i)
+% \end{align}
+% %Here $(C_{ij})_{\text{trans}}$ depends on the characteristics of the intersection, whether the transition is a right or left turn, whether it is a stop sign or traffic light, etc.  
+% Here, $M_j$ is the cost of parking and $(C_j)_\text{wait}$ is the cost of waiting for a space which we take to be the $(C_j)_\text{wait} = \tau\Delta t_j$ where $\tau$ is a time vs. money tradeoff parameter and $\Delta t_j$ is the average amount of time spent on block face $j$.  The 
+% probability of an individual driver getting a parking spot, $p_j$, is given by
+% \begin{align}
+% p_j & = \Big(1-e^{-c_j\gamma_j \Delta t_j}\Big) \frac{1}{1+x_j} %\sum_j x_{ij}} 
+% \end{align}
+% This equation consists of two parts.  The first is the probability that a space opens up in the time the driver spends on the block face.  The second part is the probability that an individual driver of the population on the edge gets that space.  This second term is 1 when there is 0 mass on the edge, $\frac{1}{2}$ when there is a mass of 1 other driver on the edge, $\frac{1}{3}$ when there is a mass of 2 other drivers on the edge, etc.  
+
+% The full loss function can be rewritten as
+% \begin{align}
+% \ell_j(x) = 
+% %l_{ij}(x)  = l_i(x) = 
+% \underbrace{
+% \Big(M_j + (C_j)_\text{wait}\Big)
+% }_{a_j} 
+% \underbrace{-
+% (C_j)_\text{wait}\Big(1-e^{-c_j\gamma_j \Delta t_j}\Big)
+% }_{b_j}
+% \frac{1}{1+ x_j} %\sum_j x_{ij}}
+% %R_{ij}(x)  = - (C_{ij})_{\text{trans}} - (C_i)_\text{wait}  + \Bigg((C_i)_\text{wait}-M_{i}\Bigg)\frac{1-e^{-c_i\mu_i \Delta t_i}}{\sum_j x_{ij}}
+% \end{align}
+% %We note that it is important for $M_i > (C_i)_\text{wait}$, otherwise no one would want to park.  
+% The potential function is then given by
+% \begin{align}
+% %F(x) & = \sum_j \int_0^{\sum_j x_{ij}} l_i(u) \ du \\
+% %F(x) & = \sum_j \left[ a_i \sum_j x_{ij} + b_i \ln\left(1+\sum_j x_{ij} \right)\right]
+% F(x) = \sum_j \int_0^{x_j} \ell_j(u) \ du 
+% = \sum_j \bigg[ a_j x_j + b_i \ln\big(1+x_j \big)\bigg]
+% \end{align}
+% We use the following parameter values (Table. \ref{commonParamVal}) for all streets, while the number of parking spaces are given by Table. \ref{spaceParam}.
+% \begin{center}\label{commonParamVal}
+% \begin{tabular}{|cccc|}
+% \hline
+% $\Delta t_j $ (min)  & $\gamma_j$ (1/hr) & $M_j$ (\$) & $\tau$ ($\$$/min) \\
+% \hline
+% 0.5 &  1/120 &  5 & 0.5\\
+% \hline
+% \end{tabular}
+% \end{center}
+
+
+% \begin{center}\label{spaceParam}
+% \begin{tabular}{|c|ccccccc|}
+% \hline
+% Street & 
+% 1-6 & 7-8 & 9-10 & 11-14 & 15-16 & 17-18 & 19 -24 \\
+% \hline
+% Num. spaces $(c_j)$ &
+% 20 & 10 & 20 & 10 & 20 & 10 & 20 \\
+% \hline
+% \end{tabular}
+% \end{center}
+% The streets are numbered in Figure \ref{fig:dualnums}.  
+
+% % We consider this game in the infinite horizon case with deterministic transitions.  In Figure \ref{fig:circles}, we look at the traffic distribution at the Wardrop equilibrium, at the social optimum, and when the population members use a uniform turning strategy.  We note that one application of this model could be determining how to vary parking prices between streets in order to improve congestion since even in this simple scenario the Nash solution is suboptimal.  We also note that a model like this could be integrated with the queue-routing game developed in Chapter \ref{chap:park} to provide a more sophisticated model of parking behavior.  
+
+% \begin{figure*}
+% \center
+% \subfloat[\label{fig:dualnums}]{\includegraphics[width=0.45\textwidth]{figs/dualnums.pdf}}
+% \hspace{0.1in}
+% \subfloat[\label{fig:circlenash}]{\includegraphics[width=0.45\textwidth]{figs/circle_nash.pdf}}
+% \\
+% \subfloat[\label{fig:circlesoc}]{\includegraphics[width=0.45\textwidth]{figs/circle_soc.pdf}}
+% \hspace{0.1in}
+% \subfloat[\label{fig:circleunif}]{\includegraphics[width=0.45\textwidth]{figs/circle_unif.pdf}}
+% \hspace{0.1in}
+% \subfloat[]{\includegraphics[width=0.05\textwidth]{figs/circle_scale.png}}
+% \caption{(a) Block faces and allowed transitions. (b) Wardrop equilibrium.  (c) Social optimum.  (d) Uniform turns.  (e) Scale (cars).}
+% \label{fig:circles}
+% %    \label{fig:amgrids}
+%  \end{figure*}
 
 
 

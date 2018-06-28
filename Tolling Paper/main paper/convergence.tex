@@ -1,1 +1,31 @@
-\section{Convergence}\label{convergence}
+\section{Constrained MDP Congestion Games}\label{convergence}
+\subsection{Linear Toll}
+\subsection{Quadratic Toll}
+\subsection{Individual Game Player Perspective}
+\begin{theorem}
+Assume there exists a feasible, non-zero toll corresponding to constraint  $y_t(s,a) \leq d_t(s,a)$ for Eqn. \ref{MDP}. 
+% For the following MDP problem, with the added constraint  $y_t(s,a) \leq d_t(s) $. 
+% \begin{equation}\label{MDP}
+% \begin{aligned}
+% \text{maximize}\quad &\sum_{t\in\mathcal{T}} \sum_{s\in\mathcal{S}} \sum_{a\in\mathcal{A}} \int_0^{y_t(s,a)} c_t(s,a) \partial y_t(s,a) \\
+% \text{s.t.} \,\,& \sum\limits_{a\in\mathcal{A}} y_{t+1}(s', a) = \sum\limits_{s\in\mathcal{S}}\sum\limits_{a\in\mathcal{A}}\Gamma(s'\mid s, a)y_t(s, a),\\
+% &\sum\limits_{a\in\mathcal{A}}y_0(s, a)=p_0(s),\\
+% &y_t(s, a)\geq 0,\\
+% \end{aligned}
+% \end{equation}
+then any additional agents added to network will avoid the constrained state when toll is active and will not cause constraint violation. 
+\end{theorem}
+\begin{proof}
+Consider an optimal solution to Eqn. \ref{MDP}, $y_t^*(s,a)$, and a constrained optimal solution, $x_t^*(s,a)$. From KKT conditions, toll is non-zero where $y_t^*(s,a) > d_t(s,a) $. Suppose for $t_c, s_c, a_c $, $y^* $ violates the constraint. Then from exact penalty theorem, $x_{t_c}^*(s_c,a_c) = d_{t_c}(s_c,a_c) $. 
+
+
+At $t_c, s_c, x^* $, the value function of the tolled MDP problem is
+\[
+V_{t_c}(s_c)  = \max_a f(a) = c_{t_c}(s_c, a) + \sum_{s'}\Gamma (s' | s_c, a)V_{t_c + 1}(s')
+\]
+The policy is 
+\[
+\pi_{t_c}(s_c)  = \argmax_a c_{t_c}(s_c, a) + \sum_{s'}\Gamma (s' | s_c, a)V_{t_c + 1}(s')
+\]
+If $ y_{t_c}^*(s_c,a_c) > d_{t_c}(s_c,a_c) $ and $x_{t_c}^*(s_c,a_c) = d_{t_c}(s_c,a_c) $, then there exists alternative $a' $ such that $f(a') > f(a_c) $. Therefore any additional agent will not choose $a_c $, instead will choose $a' $, and therefore avoid the constrained state action pair. 
+\end{proof}

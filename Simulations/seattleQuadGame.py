@@ -8,6 +8,8 @@ import mdpRoutingGame as mrg
 import mdp as mdp
 import dynamicProgramming as dp
 
+
+
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -21,19 +23,26 @@ sGame.setQuad();
 #plt.show()
 #p0 = np.ones((seattleGraph.number_of_nodes()))/seattleGraph.number_of_nodes();
 p0 = np.zeros((seattleGraph.number_of_nodes()));
-p0[0] = 1.0;
-
+#p0[0] = 1.0;
+# make all drivers start from residential areas 6 of them
+residentialNum = 6;
+p0[2] = 1./residentialNum;
+p0[3] = 1./residentialNum;
+p0[7] = 1./residentialNum;
+p0[8] = 1./residentialNum;
+p0[10] = 1./residentialNum;
+p0[11] = 1./residentialNum;
 
 print "Solving primal unconstrained case";
 optRes = sGame.solve(p0, verbose=False,returnDual=False);
-#mdp.drawOptimalPopulation(Time,
-#                          sGame("graphPos"),
-#                          sGame("G"),
-#                          optRes,
-#                          startAtOne = True);
+mdp.drawOptimalPopulation(Time,
+                          sGame("graphPos"),
+                          sGame("G"),
+                          optRes,
+                          startAtOne = True);
 #
-                               
-sGame.setConstrainedState(6, 0.5);
+cState = 6;                               
+sGame.setConstrainedState(cState, 0.1);
 print "Solving constrained case, state 7 >= 0.5 case";
 optCRes = sGame.solveWithConstraint(p0,verbose = False);
 print "optimal dual: ", sGame("optDual")
@@ -55,9 +64,19 @@ mdp.drawOptimalPopulation(Time,
                           startAtOne = True,
                           constrainedState = sGame("constrainedState"), 
                           constrainedUpperBound = sGame("constrainedUpperBound"));
-#     
-
-                     
+     
+# plot constrained state
+timeLine = np.linspace(1,Time,20)
+cTraj = np.sum(optCSol[cState,:,:],axis=0)           
+traj = np.sum(optRes[cState,:,:],axis=0)  
+fig = plt.figure();  
+plt.plot(timeLine,traj,label = "unconstrained trajectory");
+plt.plot(timeLine,cTraj,label = "constrained trajectory"); 
+plt.legend();
+plt.title("State 7 Constrained vs Unconstrained Trajectories")
+plt.xlabel("Time");
+plt.ylabel("Driver Density")
+plt.show();
 #yT = optRes[:,:,Time-1];                           
 #print "Solving dynamic programming problem of unconstrained problem"; 
 ##cR = mdp.constrainedReward3D(sGame("reward"),
