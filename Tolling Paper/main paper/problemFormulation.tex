@@ -1,12 +1,64 @@
-\section{Problem Formulation}\label{problemFormulation}
+% \section{Problem Formulation}\label{problemFormulation}
 
 \section{Problem Formulation}\label{problemFormulation}
 Brief explanation of relevant concepts from each of the following fields
 \subsection{Markov decision processes}
-\subsection{Potential Games}
-\subsection{Wardrop Equilibrium}
-\subsection{Exact Penalty}
-% \subsection{Markov decision processes with density and flow rate constraints}
+Consider the following linear programming formulation of finite horizon MDP \cite{puterman2014markov}
+\begin{equation}
+\begin{aligned}
+\underset{\substack{y_t\\t\in\mathcal{T}}}{\mbox{min.}} & \sum\limits_{t\in\mathcal{T}}\sum\limits_{s\in\mathcal{S}} \sum\limits_{a\in\mathcal{A}} y_t(s, a)c_t(s, a)\\
+\mbox{s.t.} &\sum\limits_{a\in\mathcal{A}} y_{t+1}(s', a) = \sum\limits_{s\in\mathcal{S}}\sum\limits_{a\in\mathcal{A}}\Gamma(s'\mid s, a)y_t(s, a),\\
+&\sum\limits_{a\in\mathcal{A}}y_0(s, a)=p_0(s),\\
+&y_t(s, a)\geq 0,\quad \forall s, s'\in\mathcal{S}, a\in\mathcal{A}, t\in\mathcal{T}
+\end{aligned}\label{MDP}
+\end{equation}
+where \(\mathcal{S}\) and \(\mathcal{A}\) denote respectively the set of states and actions, \(\mathcal{T}=\{0, \ldots, |\mathcal{T}|\}\) denote the time step, \(y_t(s, a)\) and \(c_t(s, a)\) denote respectively the probability and cost of state-action pair \((s, a)\), \(\Gamma(s'|s, a)\) denotes transition probability from state \(s\) to state \(s'\) given action \(a\), \(p_0(s)\) denotes the probability that the decision processes starts from state \(s\). 
 
-\begin{theorem}[Exact penalty]\cite[Prop. 5.4.5]{bertsekas1999nonlinear}
+\subsection{Potential Games}
+\begin{definition}
+$\exists$ a function $F(z) \in \mbf{C}^1$ such that
+\begin{align}
+\frac{\partial F}{\partial z_t[s,a]} = R_t[s,a](z_t)
+\end{align}
+\end{definition}
+In the standard case, $R_t[s,a] (z_t) = R_t[s,a]\Big(z_t[s,a]\Big)$ and we can write a potential function similar to the Rosenthal potential from non-atomic routing games
+\begin{align}
+F(z) = \sum_t \sum_s \sum_a \int_0^{z_t[s,a]} R_t[s,a](u) \ du
+\end{align}
+\subsubsection{Potential Optimization Problem}
+Initial population distribution: $m_0 \in \mb{R}^n$
+
+\begin{align}
+\max_{\{z_t\}_{t=0}^N} & \quad F(z) \label{eq:potopt} \\
+\text{s.t.} & \quad z_0 = m_0, \quad z_t \geq 0  \qquad \qquad t=0,\dots, N \notag \\
+& \quad \sum_k z_{t+1}[s',a] = \sum_i \sum_k G_{t,k}^T[s',s] z_t[s,a] \notag
+\end{align}
+\subsection{Wardrop Equilibrium}
+\begin{theorem}
+A minimizer of \eqref{eq:potopt} is a \emph{Wardrop Equilibrium}.  
+\end{theorem}
+\subsection{Exact Penalty}
+\begin{theorem}[\cite{bertsekas1999nonlinear}]
+Consider constrained optimization problem
+\begin{equation}
+ \begin{array}{ll}
+  \underset{x\in\mathcal{X}}{\mbox{minimize}} & f(x)\\
+   \mbox{subject to} & g(x)\leq 0,\quad 
+     \end{array}
+     \label{constrained opt. problem}
+\end{equation}
+and its penalized form 
+\begin{equation}
+ \begin{array}{ll}
+  \underset{x\in\mathcal{X}}{\mbox{minimize}} & f(x)+\tau^\top [g(x)]_+
+     \end{array}
+     \label{penalty problem}
+\end{equation}
+where \(f:\reals^n\to \reals\) and \(g(x)=\begin{bmatrix} g_1(x) & \ldots g_m(x) \end{bmatrix}^\top\), \(g_i(x):\reals^m\to\reals\) are convex functions, \(\mathcal{X}\subseteq\reals^n\) is a convex set, \([y]_+=y\) if \(y\in\reals^m_+\) and zero otherwise. Further, assume \((x^\star, \tau^\star)\) be a optimal primal-dual pair of problem \eqref{constrained opt. problem} (satisfies the KKT conditions). Then 
+\begin{itemize}
+\item problem \eqref{constrained opt. problem} and \eqref{penalty problem} have the same optimal values if and only if \(\tau\geq \tau^\star\).
+\item problem \eqref{constrained opt. problem} and \eqref{penalty problem} have the same optimal solutions if \(\tau > \tau^\star\).
+\end{itemize}
+
+
 \end{theorem}
