@@ -5,9 +5,88 @@ Created on Mon Jun 04 15:40:26 2018
 @author: craba
 """
 import numpy as np;
+
+def iterativeDP(states, actions, time, numPlayers, p0, 
+                R, C, P,
+                hasToll = False, 
+                toll = None, 
+                tollState = None):
+    yt = np.zeros((states, actions, time));
+    totalVal = 0;
+    VTotal = np.zeros((states, time));  
+    for p in range(numPlayers):
+    #    startPt = residentialList[p%residentialNum];
+    #    startCdn = np.zeros((seattleGraph.number_of_nodes()));
+    #    startCdn[startPt] = 1.0;
+        startCdn = p0/numPlayers;
+        V, valNext, yNext =  instantDP(R,
+                                       C,
+                                       P,
+                                       yt, 
+                                       startCdn, 
+                                       hasToll = hasToll,
+                                       toll = toll,
+                                       tollState = tollState);
+        yt += 1.0*yNext;
+        totalVal += 1.0*valNext;   
+        VTotal += V;
+        
+    return V, totalVal, yt;
     
-def dynamicPLinearCost(c,P,yt, p0, hasToll =False, toll = None, tollState = None):
-    states,actions,time = c.shape;
+def instantDP(R, C, P,yt, p0, hasToll =False, toll = None, tollState = None):
+    states,actions,time = R.shape;
+    V = np.zeros((states, time));
+    policy = np.zeros((states, time)); # pi_t(state) = action;
+    trajectory = np.zeros((states,time));
+    yNext = np.zeros((states,actions,time));
+    # construct optimal value function and policy
+    for tIter in range(time):
+        t = time-1-tIter;   
+        if t == time-1:
+            cCurrent =-np.multiply(R[:,:,t], yt[:,:,t]) + C[:,:,t];
+            if hasToll:    
+                if (toll[t]> 0 ):
+                    cCurrent[tollState,:] += toll[t];
+                    
+            V[:,t] = np.max(cCurrent, axis = 1);
+            pol = np.argmax(cCurrent, axis=1);
+            policy[:,t] = pol;
+        else:
+            cCurrent =-np.multiply(R[:,:,t], yt[:,:,t]) + C[:,:,t];
+            if hasToll:    
+                if (toll[t]> 0):
+                    cCurrent[tollState,:] += toll[t];
+            # solve Bellman operators
+            Vt = V[:,t+1];
+            obj = cCurrent + np.einsum('ijk,i',P,Vt);
+            V[:,t] = np.max(obj, axis=1);
+            pol = np.argmax(obj, axis=1);
+            policy[:,t] = pol;
+
+    for t in range(time):
+        # construct next trajectory
+        if t == 0:
+            traj = 1.0*p0;
+        else:
+            traj = trajectory[:,t-1];
+        # construct y
+        pol = policy[:,t];
+        y = np.zeros((states,actions));
+
+        for s in range(states):
+            y[s,int(pol[s])] = traj[s];
+        yNext[:,:,t] = 1.0*y;
+        trajectory[:,t] =  np.einsum('ijk,jk',P,y);
+
+            
+    val = sum([p0[state]*V[state,0] for state in range(states)]) \
+          + 0.5*sum([sum([sum([R[state,a,t]*yNext[state,a,t]*yNext[state,a,t]
+                for t in range(time)])  for state in range(states)]) for a in range(actions)]);
+
+    return V, val, yNext;
+ 
+def dynamicPLinearCost(R, C, P,yt, p0, hasToll =False, toll = None, tollState = None):
+    states,actions,time = R.shape;
     V = np.zeros((states, time));
     policy = np.zeros((states, time)); # pi_t(state) = action;
     trajectory = np.zeros((states,time));
@@ -16,22 +95,26 @@ def dynamicPLinearCost(c,P,yt, p0, hasToll =False, toll = None, tollState = None
         t = time-1-tIter;   
         print "----------------------t = ", t," -----------------";
         if t == time-1:
-            cCurrent =-np.multiply(c[:,:,t], yt[:,:,t]);
+            cCurrent =-np.multiply(R[:,:,t], yt[:,:,t]) + C[:,:,t];
             if hasToll:    
-                V[tollState,t] = V[tollState,t] + toll[t];
+                cCurrent = cCurrent - toll[t];
 #            print cCurrent.shape;
             V[:,t] = np.max(cCurrent, axis = 1);
 #            print cCurrent;
 #            print V[:,t]
         else:
-            cCurrent =-np.multiply(c[:,:,t], yt[:,:,t]);
+            cCurrent =-np.multiply(R[:,:,t], yt[:,:,t]) + C[:,:,t];
             if hasToll:    
-                V[tollState,t] = V[tollState,t] + toll[t];
+                cCurrent = cCurrent - toll[t];
             # solve Bellman operators
             Vt = V[:,t+1];
             obj = cCurrent + np.einsum('ijk,i',P,Vt);
-            V[:,t] = np.max(obj, axis=1);
-            pol = np.argmax(obj, axis=1);
+            V[:,t] = np.min(obj, axis=1);
+#            for s in range(states):
+#                for a in range(actions):
+#                    if obj[s,a]+ 1e-8 >=V[:,t]:
+#                        a 
+            pol = np.argmin(obj, axis=1);
             policy[:,t+1] = pol;
 #            print obj
 #            print V[:,t];
@@ -42,6 +125,8 @@ def dynamicPLinearCost(c,P,yt, p0, hasToll =False, toll = None, tollState = None
     for t in range(time):
         # construct next trajectory
         if t == 0:
+#            bestState = np.argmax(V[:,0]);
+#            trajectory[bestState,t] = 1.0;
             trajectory[:,t] = p0;
         else:
             # construct y
@@ -53,7 +138,7 @@ def dynamicPLinearCost(c,P,yt, p0, hasToll =False, toll = None, tollState = None
                 y[s,int(pol[s])] = traj[s];
             trajectory[:,t] =  np.einsum('ijk,jk',P,y);
     
-    print -sum([p0[state]*V[state,0] for state in range(states)])-0.5*sum([sum([c[state,0,t]*trajectory[state,t]*trajectory[state,t] for t in range(time)])  for state in range(states)]);
+    print -sum([p0[state]*V[state,0] for state in range(states)])-0.5*sum([sum([R[state,0,t]*trajectory[state,t]*trajectory[state,t] for t in range(time)])  for state in range(states)]);
     return V, trajectory;
 
     

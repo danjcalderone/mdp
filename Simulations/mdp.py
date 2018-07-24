@@ -60,23 +60,29 @@ def constrainedReward3D(c,toll,constrainedState):
 def drawOptimalPopulation(time,pos,G,optRes, is2D = False, 
                           constrainedState = None, 
                           startAtOne = False, 
-                          constrainedUpperBound = 0.2):
+                          constrainedUpperBound = 0.2,
+                          numPlayers = 1.):
     frameNumber = time;
     v = G.number_of_nodes();
     fig = plt.figure();
     #ax = plt.axes(xlim=(0, 2), ylim=(-2, 2))
     #line, = ax.plot([], [], lw=2)
     iStart = -5;
-    mag = 80000;
-    cap = mag* np.ones(v);  
-#    if(constrainedState != None):
-#        # Draw the red circle
-#        cap[constrainedState]= cap[constrainedState]*(constrainedUpperBound+0.3); 
+    mag = 1;
+    if is2D: 
+        mag = 100;
+    cap = mag*numPlayers* np.ones(v);  
+    if(constrainedState != None):
+        # Draw the red circle
+        cap[constrainedState]= cap[constrainedState]/(constrainedUpperBound)+1000; 
+
+    nx.draw_networkx_nodes(G,pos,node_size=cap,node_color='r',alpha=1);
+    
+    if(constrainedState != None):
+        # Draw the white circle
+        cap[constrainedState]= cap[constrainedState]/(constrainedUpperBound); 
+        
     nx.draw(G, pos=pos, node_color='w',with_labels=True, font_weight='bold');
-#    nx.draw_networkx_nodes(G,pos,node_size=3.2/3*cap,node_color='r',alpha=1);
-#    if(constrainedState != None):
-#        # Draw the white circle
-#        cap[constrainedState]= cap[constrainedState]*(constrainedUpperBound+ 0.2); 
     dontStop = True; 
     try:
         
@@ -102,7 +108,7 @@ def drawOptimalPopulation(time,pos,G,optRes, is2D = False,
                 nodesize=[frame[f-1]*frame[f-1]*mag for f in G];
             else:
                 nodesize=[frame[f]*frame[f]*mag for f in G];
-            nx.draw_networkx_nodes(G,pos,node_size=cap/30.,node_color='w',alpha=1)
+            nx.draw_networkx_nodes(G,pos,node_size=cap*numPlayers,node_color='w',alpha=1)
             nx.draw_networkx_nodes(G,pos,node_size=nodesize,node_color='c',alpha=1)  
         except KeyboardInterrupt:
             dontStop = False;
@@ -178,9 +184,12 @@ def cvxList2Arr(optList,shapeList,isDual):
     return arr;
 # truncate one D array to something more readable
 def truncate(tau):
-    for i in range(len(tau)):
-        if abs(tau[i]) <= 1e-8:
-            tau[i] = 0.0;
+    for index, x in np.ndenumerate(tau):
+        if abs(x) <= 5e-8:
+            tau[index] = 0.0;
+            
+        if x <= 0:
+            tau[index] = 0.0;
     return tau;
         
 def generateMDP(v,a,G, p =0.9):
@@ -306,7 +315,7 @@ def generateQuadMDP(v,a,G,distances, p =0.9):
             neighbourInd = neighbour - 1;
             P[neighbourInd,node,actionIter] = p;
             c[node, actionIter] = -kGo*getDistance(neighbour,nodeInd, distances);
-            d[node, actionIter] = 0; # indedpendent of congestion
+            d[node, actionIter] = 0; # indedpendent of distance
             # chance of ending somewhere else
             for scattered in neighbours:
                 scatteredInd = scattered -1;
