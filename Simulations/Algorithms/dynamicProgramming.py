@@ -6,6 +6,28 @@ Created on Mon Jun 04 15:40:26 2018
 """
 import numpy as np;
 
+def MSA(states, actions, time, p0, R, C, P, maxErr = 1e-1):
+    maxIterations = 8e5;
+    it = 1;
+    err = 1000.;
+    ytsa = np.zeros((states, actions, time));
+    cost = np.zeros((states, actions, time))
+    while it <= maxIterations and err >= maxErr:
+        step = 1./it;
+        lastCost = cost;
+        # run value iteration on costs to generate new flow
+        V, valNext, yNext =  instantDP(R, C, P,ytsa, p0)
+        # merge the flows
+        ytsa = (1. - step)*ytsa + step*yNext;
+        # calculate new costs
+        cost =-np.multiply(R, ytsa) + C;
+        err = np.linalg.norm(lastCost - cost);
+        it += 1;
+        
+    print " ------------ MSA summary -----------";
+    print "number of iterations = ", it;
+    print "total error in cost function = ", err;
+    return cost, ytsa;
 def iterativeDP(states, actions, time, numPlayers, p0, 
                 R, C, P,
                 hasToll = False, 
@@ -13,12 +35,14 @@ def iterativeDP(states, actions, time, numPlayers, p0,
                 tollState = None):
     yt = np.zeros((states, actions, time));
     totalVal = 0;
+    increment = 1;
     VTotal = np.zeros((states, time));  
-    for p in range(numPlayers):
+    Iteration = numPlayers*increment;
+    for p in range(Iteration):
     #    startPt = residentialList[p%residentialNum];
     #    startCdn = np.zeros((seattleGraph.number_of_nodes()));
     #    startCdn[startPt] = 1.0;
-        startCdn = p0/numPlayers;
+        startCdn = 1.0*p0/Iteration;
         V, valNext, yNext =  instantDP(R,
                                        C,
                                        P,
@@ -45,7 +69,7 @@ def instantDP(R, C, P,yt, p0, hasToll =False, toll = None, tollState = None):
         if t == time-1:
             cCurrent =-np.multiply(R[:,:,t], yt[:,:,t]) + C[:,:,t];
             if hasToll:    
-                if (toll[t]> 0 ):
+                if (abs(toll[t])> 0):
                     cCurrent[tollState,:] += toll[t];
                     
             V[:,t] = np.max(cCurrent, axis = 1);
@@ -54,7 +78,7 @@ def instantDP(R, C, P,yt, p0, hasToll =False, toll = None, tollState = None):
         else:
             cCurrent =-np.multiply(R[:,:,t], yt[:,:,t]) + C[:,:,t];
             if hasToll:    
-                if (toll[t]> 0):
+                if (abs(toll[t])> 0):
                     cCurrent[tollState,:] += toll[t];
             # solve Bellman operators
             Vt = V[:,t+1];
