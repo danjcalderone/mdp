@@ -30,9 +30,26 @@ sDEMAND = np.array([50 ,
                     20 ,
                     70 ,
                     20 ,
-                    20 ])  ;               
+                    20 ])  ;      
+sSUPPLY = np.array([50 , 
+                    10,
+                    130 ,
+                    80,
+                    130 ,
+                    30 ,
+                    30 ,
+                    120 ,
+                    120 ,
+                    50 ,
+                    80 ,
+                    80 ])  ;           
                                     
-                                    
+def getSupply(state):
+    if state < sSUPPLY.size:
+        return sSUPPLY[state];
+    else:
+        print "getSupply function: state doesn't exist";
+        return 999999999;                                    
 # ----------generate new constrained reward based on exact penalty-------------
 # (for 2D reward matrix)
 def constrainedReward2D(c,toll,constrainedState, time):
@@ -67,11 +84,11 @@ def drawOptimalPopulation(time,pos,G,optRes, is2D = False,
     fig = plt.figure();
     #ax = plt.axes(xlim=(0, 2), ylim=(-2, 2))
     #line, = ax.plot([], [], lw=2)
-    iStart = -10;
-    mag = 1.;
+    iStart = -5;
+    mag = 1;
     if is2D: 
-        mag = numPlayers;
-    cap = mag* np.ones(v);  
+        mag = 100;
+    cap = mag*numPlayers* np.ones(v);  
     if(constrainedState != None):
         # Draw the red circle
         cap[constrainedState]= cap[constrainedState]/(constrainedUpperBound)+1000; 
@@ -82,7 +99,7 @@ def drawOptimalPopulation(time,pos,G,optRes, is2D = False,
         # Draw the white circle
         cap[constrainedState]= cap[constrainedState]/(constrainedUpperBound); 
         
-    nx.draw(G, pos=pos, node_size=numPlayers*numPlayers*cap, node_color='w',with_labels=True, font_weight='bold');
+    nx.draw(G, pos=pos, node_color='w',with_labels=True, font_weight='bold');
     dontStop = True; 
     try:
         
@@ -94,7 +111,6 @@ def drawOptimalPopulation(time,pos,G,optRes, is2D = False,
     
     for i in range(iStart,frameNumber):
         try:
-            magFac = 5.;
             if is2D:
                 if i < 0:
                     frame = optRes[:,0];
@@ -106,11 +122,11 @@ def drawOptimalPopulation(time,pos,G,optRes, is2D = False,
                 else:   
                     frame = np.einsum('ij->i', optRes[:,:,i]);
             if startAtOne:
-                nodesize=[magFac*frame[f-1]*frame[f-1] for f in G];
+                nodesize=[frame[f-1]*frame[f-1]*mag for f in G];
             else:
-                nodesize=[magFac*frame[f]*frame[f] for f in G];
-            nx.draw_networkx_nodes(G,pos,node_size=numPlayers*numPlayers*cap,node_color='w',alpha=1)
-            nx.draw_networkx_nodes(G,pos,node_size=nodesize*cap,node_color='c',alpha=1)  
+                nodesize=[frame[f]*frame[f]*mag for f in G];
+            nx.draw_networkx_nodes(G,pos,node_size=cap*numPlayers,node_color='w',alpha=1)
+            nx.draw_networkx_nodes(G,pos,node_size=nodesize,node_color='c',alpha=1)  
         except KeyboardInterrupt:
             dontStop = False;
         plt.show();
@@ -183,8 +199,15 @@ def cvxList2Arr(optList,shapeList,isDual):
         
         it.iternext();                    
     return arr;
-
-
+# truncate one D array to something more readable
+def truncate(tau):
+    for index, x in np.ndenumerate(tau):
+        if abs(x) <= 5e-8:
+            tau[index] = 0.0;
+            
+        if x <= 0:
+            tau[index] = 0.0;
+    return tau;
         
 def generateMDP(v,a,G, p =0.9):
     """
@@ -327,7 +350,8 @@ def generateQuadMDP(v,a,G,distances, p =0.9):
             for scattered in neighbours: 
                 scatteredInd = scattered -1;
                 P[scatteredInd,node,actionIter] = evenP;
-                
+            # c is the C matrix in mdpRoutingGame class
+            # d is the R matrix in mdp routing game class
             c[node, actionIter] = (sP.rate - kGo)*getExpectedDistance(nodeInd,G,distances); # constant offset 
             d[node,actionIter] = sP.tau/sDEMAND[node]; # dependence on current density
 #            P[node, node, actionIter] = p;

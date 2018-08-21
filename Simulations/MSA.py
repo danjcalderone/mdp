@@ -53,21 +53,17 @@ optRes, optObj = sGame.solve(p0, verbose=False,returnDual=False);
 #                          startAtOne = True,
 #                          numPlayers= p0[0]);
 
-cleanOpt = ut.truncate(optRes);
-V, VTotal, yt = dp.iterativeDP(sGame.States,
-                               sGame.Actions,
-                               sGame.Time, 
-                               numPlayers,
-                               p0,
-                               sGame("reward"),
-                               sGame("C"),
-                               sGame("probability"));
-                               
-print"----------    Dynamic Programming value     --------------";
-print VTotal;
-yDP = ut.truncate(yt);
-totalDiff = la.norm(ut.truncate(abs(yDP - cleanOpt)))
-print "Maximum difference   ", (ut.truncate(abs(yDP - cleanOpt))).max()/numPlayers;
+#cleanOpt = ut.truncate(optRes);
+#costs, yt = dp.MSA(sGame.States, sGame.Actions, sGame.Time, 
+#                               p0,
+#                               sGame("reward"),
+#                               sGame("C"),
+#                               sGame("probability"));
+#                               
+#print"----------    Dynamic Programming value     --------------";
+#yDP = ut.truncate(yt);
+#totalDiff = la.norm(ut.truncate(abs(yDP - cleanOpt)))
+#print "Maximum difference   ", (ut.truncate(abs(yDP - cleanOpt))).max()/numPlayers;
     
 
 cState = 6;      
@@ -86,9 +82,9 @@ optCRes = sGame.solveWithConstraint(p0,verbose = False);
 #                          constrainedState = sGame("constrainedState"), 
 #                          constrainedUpperBound = sGame("constrainedUpperBound"));
 if isLB: 
-    optimalDual = np.concatenate((np.zeros(3), sGame("optDual") ));
+    optimalDual = np.concatenate((np.zeros(3), sGame("optDual") )) + 0.01;
 else:
-    optimalDual = -np.concatenate((np.zeros(3), sGame("optDual")));
+    optimalDual = -np.concatenate((np.zeros(3), sGame("optDual"))) + 0.01;
 #####
 print "Solving unconstrained problem with new Toll";
 optCSol, optTolledObj = sGame.solve(p0,withPenalty=True,verbose = False, returnDual = False)
@@ -102,38 +98,49 @@ optCSol, optTolledObj = sGame.solve(p0,withPenalty=True,verbose = False, returnD
 ##     
 
 cleanOpt = ut.truncate(optCSol);
+barC =  sGame("C") + ut.toll2Mat(cState, optimalDual, [sGame.States, sGame.Actions, sGame.Time], isLB);
 
-V, VTotal, yt = dp.iterativeDP(sGame.States,
-                               sGame.Actions,
-                               sGame.Time, 
-                               numPlayers,
-                               p0,
-                               sGame("reward"),
-                               sGame("C"),
-                               sGame("probability"),
-                               hasToll = True,
-                               toll = optimalDual + 1.0,
-                               tollState = cState);
-                               
-print"----------    Dynamic Programming value     --------------";
-print VTotal- np.sum(optimalDual*cThresh);
-yDP = ut.truncate(yt);
-totalDiff = la.norm(ut.truncate(abs(yDP - cleanOpt)))
-print "Maximum difference   ", (ut.truncate(abs(yDP - cleanOpt))).max()/numPlayers;
+# Simulate the values converging to optimal solution
+threshIter = 20;
+ytThresh = np.zeros((sGame.States, sGame.Actions, sGame.Time, threshIter));
+threshVal = np.zeros((threshIter));
+normDiff = np.zeros((threshIter, 2)); # two norm and infinity norm
+for iter in range(threshIter):
+    print "iteration = ", iter;
+    threshVal[iter] = 91.0 - (iter/2.)**2;    
+    costs, ytThresh[:,:,:,iter] = dp.MSA(sGame.States, sGame.Actions, sGame.Time, 
+                                   p0,
+                                   sGame("reward"),
+                                   barC,
+                                   sGame("probability"),
+                                   threshVal[iter] );
+    yDP = ut.truncate(ytThresh[:,:,:,iter]);
+    normDiff[iter, 0] = la.norm(ut.truncate(abs(yDP - cleanOpt)))/numPlayers;
+    normDiff[iter, 1] = (ut.truncate(abs(yDP - cleanOpt))).max()/numPlayers;
+    
+#print"----------    Dynamic Programming value     --------------";
+#yDP = ut.truncate(yt);
+#totalDiff = la.norm(ut.truncate(abs(yDP - cleanOpt)))
+#print "Maximum difference   ", (ut.truncate(abs(yDP - cleanOpt))).max()/numPlayers;
                    
 timeLine = np.linspace(1,Time,20)
-cTraj = np.sum(optCSol[cState,:,:],axis=0)
-dpTraj =  np.sum(yDP[cState,:,:],axis=0)       
-traj = np.sum(optRes[cState,:,:],axis=0)  
 fig = plt.figure();  
-plt.plot(timeLine,traj,label = "unconstrained trajectory");
-plt.plot(timeLine,cTraj,label = "constrained trajectory"); 
-plt.plot(timeLine,dpTraj,label = "dynamic trajectory"); 
-plt.legend();
-plt.title("State 7 Constrained vs Unconstrained Trajectories")
+plt.plot(timeLine,np.sum(optCSol[cState,:,:],axis=0),label = "primal constrained trajectory"); 
+for i in range(threshIter):         
+    plt.plot(timeLine,np.sum(ytThresh[cState,:,:, i],axis=0),dashes=[4, 2],label =r'$\epsilon$ = %.2f'%(threshVal[i])); 
+    
+plt.legend(fontsize = 'xx-small');
+#plt.title("Optimal Dual Solution with Decreasing Termination Tolerance")
 plt.xlabel("Time");
-plt.ylabel("Driver Density")
+plt.ylabel("Number of Drivers")
 plt.show();
-yT = optRes[:,:,Time-1];                           
-print "Solving dynamic programming problem of unconstrained problem"; 
 
+fig = plt.figure();
+plt.plot(threshVal, normDiff[:,0], label = r'$||\cdot||_2$');
+plt.plot(threshVal, normDiff[:,1], label = r'$||\cdot||_{\infty}$');
+plt.legend();
+#plt.title("Difference in Norm as a function of termination tolerance")
+plt.xlabel("Termination tolerance");
+plt.ylabel("$||y - y^*||$")
+plt.xscale("log")
+plt.show();
