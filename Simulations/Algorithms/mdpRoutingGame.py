@@ -1,15 +1,14 @@
-# -*- coding: utf-8 -*-
+ # -*- coding: utf-8 -*-
 """
 Created on Mon Jun 11 11:37:47 2018
 
 @author: craba
 """
 
-
-import mdp as mdp
+import util.mdp as mdp
 import dynamicProgramming as dp
-import figureGeneration as fG
-import utilities as ut
+import util.figureGeneration as fG
+import util.utilities as ut
 import cvxpy as cvx
 import numpy as np
 import networkx as nx

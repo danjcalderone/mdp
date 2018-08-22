@@ -7,7 +7,7 @@ Created on Mon Jun 04 15:40:26 2018
 import numpy as np;
 
 def MSA(states, actions, time, p0, R, C, P, maxErr = 1e-1):
-    maxIterations = 8e5;
+    maxIterations = 1e4;
     it = 1;
     err = 1000.;
     ytsa = np.zeros((states, actions, time));
@@ -28,6 +28,7 @@ def MSA(states, actions, time, p0, R, C, P, maxErr = 1e-1):
     print "number of iterations = ", it;
     print "total error in cost function = ", err;
     return cost, ytsa;
+
 def iterativeDP(states, actions, time, numPlayers, p0, 
                 R, C, P,
                 hasToll = False, 

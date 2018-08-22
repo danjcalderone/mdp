@@ -11,8 +11,8 @@ Created on Mon Jun 11 16:10:25 2018
 
 @author: sarah
 """
-import infMDP as imdp
-import dynamicProgramming as dp
+import Algorithms.infMDP as imdp
+import Algorithms.dynamicProgramming as dp
 
 
 

@@ -4,9 +4,9 @@ Created on Mon Jun 11 16:10:25 2018
 
 @author: sarah
 """
-import mdpRoutingGame as mrg
-import mdp as mdp
-import dynamicProgramming as dp
+import Algorithms.mdpRoutingGame as mrg
+import util.mdp as mdp
+import Algorithms.dynamicProgramming as dp
 
 
 

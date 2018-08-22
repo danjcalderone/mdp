@@ -14,7 +14,10 @@ mpl.rc('text', usetex=True)
 mpl.rcParams.update({'font.size': 20})
 mpl.rc('legend', fontsize='small')
 # specify which graph we are using for the mdp problem
-Constraint = namedtuple("constraints", "index value upperBound")
+Constraint = namedtuple("constraints", "index value upperBound");
+
+def ell(A, B, x):
+    return A.dot(x) + B;
 # truncate one D array to something more readable
 def truncate(tau, thres = 5e-8):
     for index, x in np.ndenumerate(tau):
@@ -24,7 +27,7 @@ def truncate(tau, thres = 5e-8):
 #        if x <= 0:
 #            tau[index] = 0.0;
     return tau;
-# return the nonzero entries of a matrix and their corresponding indices
+# return a list of the indices of nonzero entries of a matrix and their corresponding indices
 def nonZeroEntries(mat):
     cleanMat = truncate(mat);
     nonZero = []
@@ -33,7 +36,7 @@ def nonZeroEntries(mat):
             nonZero.append(index)
     return nonZero;
 
-# generate constraints
+# generate constraints as a list of constraints
 def constraints( indices, social, user):
     constraintList = [];
     for ind in range(len(indices)):

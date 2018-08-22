@@ -12,9 +12,9 @@ Created on Mon Jul 23 16:25:24 2018
 @author: craba
 """
 
-import mdp as mdp
+import util.mdp as mdp
 import dynamicProgramming as dp
-import figureGeneration as fG
+import util.figureGeneration as fG
 
 import cvxpy as cvx
 import numpy as np

@@ -31,8 +31,21 @@ sDEMAND = np.array([50 ,
                     70 ,
                     20 ,
                     20 ])  ;               
-                                    
-                                    
+# start all drivers uniformly in residential neighbourhoods                                   
+def resInit():
+    # define initial condition -- same for both games
+    p0 = np.zeros((seattleGraph.number_of_nodes()));
+    
+    # make all drivers start from residential areas 6 of them
+    residentialNum = 0.1;
+    p0[2] = 1./residentialNum;
+    p0[3] = 1./residentialNum;
+    p0[7] = 1./residentialNum;
+    p0[8] = 1./residentialNum;
+    p0[10] = 1./residentialNum;
+    p0[11] = 1./residentialNum;  
+    return p0;
+                                   
 # ----------generate new constrained reward based on exact penalty-------------
 # (for 2D reward matrix)
 def constrainedReward2D(c,toll,constrainedState, time):
