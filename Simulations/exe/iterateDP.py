@@ -53,7 +53,7 @@ optRes, optObj = sGame.solve(p0, verbose=False,returnDual=False);
 #                          startAtOne = True,
 #                          numPlayers= p0[0]);
 
-cleanOpt = ut.truncate(optRes);
+cleanOpt = abs(ut.truncate(optRes));
 V, VTotal, yt = dp.iterativeDP(sGame.States,
                                sGame.Actions,
                                sGame.Time, 
@@ -65,7 +65,7 @@ V, VTotal, yt = dp.iterativeDP(sGame.States,
                                
 print"----------    Dynamic Programming value     --------------";
 print VTotal;
-yDP = ut.truncate(yt);
+yDP = abs(ut.truncate(yt));
 totalDiff = la.norm(ut.truncate(abs(yDP - cleanOpt)))
 print "Maximum difference   ", (ut.truncate(abs(yDP - cleanOpt))).max()/numPlayers;
     
@@ -101,7 +101,7 @@ optCSol, optTolledObj = sGame.solve(p0,withPenalty=True,verbose = False, returnD
 ##                          constrainedUpperBound = sGame("constrainedUpperBound"));
 ##     
 
-cleanOpt = ut.truncate(optCSol);
+cleanOpt = abs(ut.truncate(optCSol));
 
 V, VTotal, yt = dp.iterativeDP(sGame.States,
                                sGame.Actions,
@@ -117,7 +117,7 @@ V, VTotal, yt = dp.iterativeDP(sGame.States,
                                
 print"----------    Dynamic Programming value     --------------";
 print VTotal- np.sum(optimalDual*cThresh);
-yDP = ut.truncate(yt);
+yDP = abs(ut.truncate(yt));
 totalDiff = la.norm(ut.truncate(abs(yDP - cleanOpt)))
 print "Maximum difference   ", (ut.truncate(abs(yDP - cleanOpt))).max()/numPlayers;
                    

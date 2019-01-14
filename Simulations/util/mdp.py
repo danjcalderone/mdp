@@ -32,12 +32,11 @@ sDEMAND = np.array([50 ,
                     20 ,
                     20 ])  ;               
 # start all drivers uniformly in residential neighbourhoods                                   
-def resInit():
+def resInit(nodes, residentialNum=0.1):
     # define initial condition -- same for both games
-    p0 = np.zeros((seattleGraph.number_of_nodes()));
+    p0 = np.zeros((nodes));
     
     # make all drivers start from residential areas 6 of them
-    residentialNum = 0.1;
     p0[2] = 1./residentialNum;
     p0[3] = 1./residentialNum;
     p0[7] = 1./residentialNum;

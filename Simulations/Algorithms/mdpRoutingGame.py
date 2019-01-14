@@ -6,14 +6,11 @@ Created on Mon Jun 11 11:37:47 2018
 """
 
 import util.mdp as mdp
-import dynamicProgramming as dp
 import util.figureGeneration as fG
 import util.utilities as ut
 import cvxpy as cvx
 import numpy as np
 import networkx as nx
-import scipy.linalg as sla
-import matplotlib.pyplot as plt
 
 
 from collections import namedtuple
@@ -89,8 +86,8 @@ class mdpRoutingGame:
             self.R = np.zeros((self.States,self.Actions,Time));
             self.C = np.zeros((self.States,self.Actions,Time));
             for t in range(Time):
-                self.R[:,:,t] = 1.0*d;
-                self.C[:,:,t] = 1.0*c;
+                self.R[:,:,t] = 1.0*d + 1;
+                self.C[:,:,t] = 1.0*c - c.min()*1.1;
                 
                 
 ######################## GETTER ###############################################
@@ -121,24 +118,28 @@ class mdpRoutingGame:
     def setQuad(self):  
         self.isQuad = True;
 #------------ set a constrained state-----------------------------
-    def setConstrainedState(self, constrainedState, bound = None, isLB = True):
+    def setConstrainedState(self, constrainedState, bound = None, 
+                            isLB = True, verbose = False):
         self.constrainedState = constrainedState;
         if isLB:
-            print "lower bound set to" , bound
+            if verbose:
+                print "lower bound set to" , bound
             self.stateLB = bound;
         else:
-            print "upper bound set to", bound;
+            if verbose:
+                print "upper bound set to", bound;
             self.stateUB = bound;
         return True;
 #-------------LP Obejective and Constraints --------------------
-    def setObjective(self,isSocial = False):
+    def setObjective(self,isSocial = False, verbose = False):
         y_ijt = {};
         for i in range(self.States):
             for j in range(self.Actions):
                 for t in range(self.Time):
                     y_ijt[(i,j,t)] = cvx.Variable();
         if self.isQuad:
-            print "quadratic objective"
+            if verbose:
+                print "quadratic objective"
             if isSocial:
                 objF = sum([sum([sum([-cvx.pos(self.R[i,j,t])*cvx.square(y_ijt[(i,j,t)])
                              for i in range(self.States) ]) 
@@ -167,11 +168,10 @@ class mdpRoutingGame:
 # ----------------------LP create penalty --------------------------------------
     def penalty(self):
         y_ijt = self.yijt;
-#        perActionPenalty = self.stateLB / self.Actions;
-        
         #NOTE: only one of the LB or UB is on at a time
         # This is toll corresponding to lower bound constraints imposed between time t = 3 and t = T. 
         if self.stateLB != None:
+#            print self.Time;
             objF = -sum([(self.optimalDual[t-3] + self.epsilon)*
                                cvx.pos(self.stateLB - sum([y_ijt[(self.constrainedState,j,t)] 
                                        for j in range(self.Actions)]) )
@@ -255,7 +255,8 @@ class mdpRoutingGame:
         actions = self.Actions;
         time = self.Time;
         if self.lpObj is None:
-            print "objective is set"
+            if verbose:
+                print "objective is set"
             self.setObjective(isSocial);
         lp = None;    
         # construct LP objective  
@@ -264,19 +265,23 @@ class mdpRoutingGame:
                 self.penalty();
             lp = cvx.Maximize(self.lpObj +  self.exactPenalty); # set lp problem            
         else:
-            print "not with penalty"
+            if verbose:
+                print "not with penalty"
             lp = cvx.Maximize(self.lpObj);
             
         y_ijt = self.yijt;
 
         if self.positivity is None:
-            print "set positivity"
+            if verbose:
+                print "set positivity"
             self.setPositivity();
         if self.massConservation is None:
-            print "set mass conservation"
+            if verbose:
+                print "set mass conservation"
             self.setMassConservation();
         if self.initialCondition is None:
-            print "set initial condition"
+            if verbose:
+                print "set initial condition"
             self.setInitialCondition(p0);
         
         mdpPolicy = cvx.Problem(lp, self.positivity+
@@ -307,7 +312,8 @@ class mdpRoutingGame:
 
         
         if self.lpObj is None:
-            print "setting constraints again"
+            if verbose:
+                print "setting constraints again"
             self.setObjective();
         lp = cvx.Maximize(self.lpObj);
         y_ijt = self.yijt;

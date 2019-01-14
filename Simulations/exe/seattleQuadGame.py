@@ -40,7 +40,7 @@ mdp.drawOptimalPopulation(Time,
                           sGame("G"),
                           optRes,
                           startAtOne = True,
-                          numPlayers = 30.);
+                          numPlayers = 60.);
 #
 cState = 6;                               
 sGame.setConstrainedState(cState, 10, isLB = True);
@@ -110,15 +110,60 @@ optCSol, optCRes = sGame.solve(p0,withPenalty=True,verbose = False, returnDual =
 timeLine = np.linspace(1,Time,20)
 cTraj = np.sum(optCSol[cState,:,:],axis=0)
 #dpTraj = dpSolC[cState,:];           
-traj = np.sum(optRes[cState,:,:],axis=0)  
-fig = plt.figure();  
-plt.plot(timeLine,traj,label = "unconstrained trajectory");
-plt.plot(timeLine,cTraj,label = "constrained trajectory"); 
+traj = np.sum(optRes[cState,:,:],axis=0)  ;
+exampleTraj1 = np.sum(optRes[1,:,:],axis=0);
+exampleTraj2 = np.sum(optCSol[1,:,:],axis=0);
+start = 0;
+#---------- stateTrajectory60PeopleConstrained --------------
+fig = plt.figure(); 
+plt.plot(timeLine[start+3:], 10*np.ones(20-start-3), label = "constraint", linewidth = 6,color ="r", alpha = 0.3);
+plt.plot(timeLine[start:],traj[start:],label = "state 7 unconstrained",linewidth = 2,linestyle = "-.",color ='#1f77b4ff');
+plt.plot(timeLine[start:],cTraj[start:],label = "state 7 constrained",linewidth = 2,color ='#1f77b4ff'); 
+plt.plot(timeLine[start:],exampleTraj1[start:],label = "state 2 unconstrained",linewidth = 2, linestyle = "-.", color ='#ff7f0eff'); 
+plt.plot(timeLine[start:],exampleTraj2[start:],label = "state 2 constrained",linewidth = 2,color ='#ff7f0eff');
 #plt.plot(timeLine,dpTraj,label = "dynamic trajectory"); 
-plt.legend();
-plt.title("State 7 Constrained vs Unconstrained Trajectories")
+plt.grid();
+#plt.legend();
+#plt.title("Constrained vs Unconstrained Trajectories")
 plt.xlabel("Time");
 plt.ylabel("Driver Density")
+#plt.savefig('test.pdf');
+#------------------ toll value ------------------------#
+plt.figure();
+plt.plot(timeLine[start+3:], sGame("optDual"), linewidth = 2);
+plt.xlabel("Time");
+plt.ylabel("Toll Value on State 7");
+plt.grid();
+#------------- sub plot with toll value and constrained trajectory------------#
+blue = '#1f77b4ff';
+orange = '#ff7f0eff';
+f, (ax1, ax2) = plt.subplots(2, 1, sharex='col');
+ax1.plot(timeLine[start+3:], 10*np.ones(20-start-3), label = "constraint", linewidth = 6,color ="r", alpha = 0.3);
+ax1.plot(timeLine[start:],traj[start:],label = "state 7 unconstrained",linewidth = 2,linestyle = "-.",color =blue);
+ax1.plot(timeLine[start:],cTraj[start:],label = "state 7 constrained",linewidth = 2,color =blue); 
+ax1.plot(timeLine[start:],exampleTraj1[start:],label = "state 2 unconstrained",linewidth = 2, linestyle = "-.", color =orange); 
+ax1.plot(timeLine[start:],exampleTraj2[start:],label = "state 2 constrained",linewidth = 2,color =orange);
+plt.xlabel('Time');
+plt.ylabel("Driver Density")
+#ax2.plot(timeLine[0:3], np.zeros(3), linewidth = 2, color = blue);
+ax2.plot(timeLine[start:], np.concatenate((np.zeros(3),sGame("optDual"))), linewidth = 2, color = blue);
+plt.ylabel("Toll Value")
+ax1.grid();
+ax2.grid();
 plt.show();
-yT = optRes[:,:,Time-1];                           
-print "Solving dynamic programming problem of unconstrained problem"; 
+
+##------------------ stateTrajectory60PeopleLegend ------------------------#
+plt.figure();
+plt.subplot(211)
+plt.plot(timeLine[start+3:], 10*np.ones(20-start-3), label = "bound value", linewidth = 6,color ="r", alpha = 0.3);
+plt.plot(timeLine[start:],traj[start:],label = r"$s_7$ unconstrained",linewidth = 2,linestyle = "-.",color =blue);
+plt.plot(timeLine[start:],cTraj[start:],label = r"$s_7$ constrained",linewidth = 2,color =blue); 
+plt.plot(timeLine[start:],exampleTraj1[start:],label = r"$s_2$ unconstrained",linewidth = 2, linestyle = "-.", color =orange); 
+plt.plot(timeLine[start:],exampleTraj2[start:],label = r"$s_2$ constrained",linewidth = 2,color =orange);
+plt.plot(timeLine[start:],np.concatenate((np.zeros(3),sGame("optDual")))/60., label = "toll charged", linestyle = ":", linewidth = 2, color = 'k');
+plt.grid();
+plt.xlabel('Time');   
+plt.legend(bbox_to_anchor=(1.00, 1), loc='upper left',fontsize = 'x-small');
+plt.show();
+
+

@@ -4,6 +4,7 @@ Created on Mon Jun 04 15:40:26 2018
 
 @author: craba
 """
+""" Not needed anymore"""
 import numpy as np;
 
 def MSA(states, actions, time, p0, R, C, P, maxErr = 1e-1):
@@ -206,4 +207,84 @@ def dynamicP(c, P, p0, isQuad = False):
     print sum([p0[state]*V[state,0] for state in range(states)]);
    
     return V, trajectory;   
+
+def pgm_dynamicP(c, P, minimize = True):
+    states,actions,time = c.shape;
+    V = np.zeros((states, time));
+    policy = np.zeros((states, time)); # pi_t(state) = action;
+#    trajectory = np.zeros((states,actions, time));
+    # construct optimal value function and policy
+
+    for tIter in range(time):
+        t = time-1-tIter;    
+        cCurrent = c[:,:, t];
+        obj = cCurrent;
+        if t != time - 1:
+            Vt = V[:,t+1];
+            obj = cCurrent + np.einsum('ijk,i',P,Vt);
+            
+        if minimize: 
+            V[:,t] = np.min(obj, axis=1);
+            pol = np.argmin(obj, axis =1);
+        else:
+            V[:,t] = np.max(obj, axis=1);
+            pol = np.argmax(obj, axis =1);
+                
+        policy[:,t] = pol;   
+    return V, policy; 
+def runPolicy(time, states, actions, policy, V, p0, P ):
+    trajectory = np.zeros((states, actions, time))
+    # propagate the population density using optimal trajectory        
+    for t in range(time):
+        pol = policy[:,t];
+        if t == 0:
+            population= p0;
+        else:
+            population = np.einsum('ijk,jk',P,trajectory[:,:,t-1]);
+        for s in range(states):
+            trajectory[:, int(pol[s]), t] = population[s];
+
+    return trajectory;
         
+def subproblem_fixedDemand(gx,gz, demand, P):
+    states, actions, time = gx.shape;
+    V = np.zeros((states, time));
+    policy = np.zeros((states, time)); # pi_t(state) = action;
+    trajectory = np.zeros((states,time));
+    xNext = np.zeros((states,actions,time));
+    zNext = np.zeros((states));
+    # construct optimal value function and policy
+    for tIter in range(time):
+        t = time-1-tIter;   
+        cCurrent =1.0*gx[:,:,t]; 
+        if t == time-1:          
+            V[:,t] = np.min(cCurrent, axis = 1);
+            policy[:,t] = np.argmin(cCurrent, axis=1);
+        else:
+            # solve Bellman operators
+            Vt = V[:,t+1];
+            obj = cCurrent + np.einsum('ijk,i',P,Vt);
+            V[:,t] = np.min(obj, axis=1);
+            policy[:,t] = np.argmin(obj, axis=1);
+            
+    p0 = 1.0*demand;
+    for s in range(states):
+        if V[s,0] >= gz[s]:#p0[s] > 0.0 and 
+            zNext[s] = 1.0*demand[s]; 
+            p0[s] = 0.;
+            
+    for t in range(time):
+        # construct next trajectory
+        if t == 0:
+            traj = 1.0*p0;
+        else:
+            traj = trajectory[:,t-1];
+        # construct y
+        pol = policy[:,t];
+        x = np.zeros((states,actions));
+        for s in range(states):
+            x[s,int(pol[s])] = traj[s];
+        xNext[:,:,t] = 1.0*x;
+        trajectory[:,t] =  np.einsum('ijk,jk',P,x);
+
+    return V, xNext,zNext, policy;  

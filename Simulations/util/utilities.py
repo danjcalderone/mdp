@@ -8,20 +8,17 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from collections import namedtuple
-
+# plotting output settings
 mpl.rc('font',**{'family':'serif'})
 mpl.rc('text', usetex=True)
-mpl.rcParams.update({'font.size': 20})
+mpl.rcParams.update({'font.size': 24})
 mpl.rc('legend', fontsize='small')
 # specify which graph we are using for the mdp problem
 Constraint = namedtuple("constraints", "index value upperBound");
-
-def ell(A, B, x):
-    return A.dot(x) + B;
-# truncate one D array to something more readable
+# truncate array values to something more readable
 def truncate(tau, thres = 5e-8):
     for index, x in np.ndenumerate(tau):
-        if abs(x) <= thres:
+        if x <= thres and x >= -thres:
             tau[index] = 0.0;
             
 #        if x <= 0:
@@ -62,11 +59,10 @@ def matGen(constraintList, values, shapeList ):
 # generate a (state, action, time) matrix with tolls in the right spots
 def toll2Mat(cState, tolls, shapeList, isLowerBound ):
     arr = np.zeros(shapeList);
+    if isLowerBound == False:
+        tolls = -1.*tolls;
     for ind in range(len(tolls)): # iterating over time
-        if isLowerBound == True:
-            arr[cState,:,ind] += tolls[ind];
-        else:
-            arr[cState,:,ind] += -tolls[ind];
+        arr[cState,:,ind] += tolls[ind];
         
     return arr;
 # plot states's densities evolving in time

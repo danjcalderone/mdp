@@ -13,7 +13,6 @@ Created on Mon Jul 23 16:25:24 2018
 """
 
 import util.mdp as mdp
-import dynamicProgramming as dp
 import util.figureGeneration as fG
 
 import cvxpy as cvx
