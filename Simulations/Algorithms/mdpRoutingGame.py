@@ -19,7 +19,7 @@ gParam = namedtuple("gParam", "type rowSize colSize")
 
 class mdpRoutingGame:
 #--------------constructor-------------------------------
-    def __init__(self, graph, Time):
+    def __init__(self, graph, Time, strictlyConvex = True):
         #------------------------ MDP problem Parameters ----------------
         self.isQuad = False;
         self.R = None; # rewards matrix 
@@ -86,8 +86,12 @@ class mdpRoutingGame:
             self.R = np.zeros((self.States,self.Actions,Time));
             self.C = np.zeros((self.States,self.Actions,Time));
             for t in range(Time):
-                self.R[:,:,t] = 1.0*d + 1;
-                self.C[:,:,t] = 1.0*c - c.min()*1.1;
+                if strictlyConvex:
+                    self.R[:,:,t] = 1.0*d + 1;
+                    self.C[:,:,t] = 1.0*c - c.min()*1.1;
+                else:
+                    self.R[:,:,t] = 1.0*d;
+                    self.C[:,:,t] = 1.0*c;
                 
                 
 ######################## GETTER ###############################################

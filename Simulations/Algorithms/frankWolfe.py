@@ -6,7 +6,33 @@ Created on Thu Aug 23 11:54:43 2018
 """
 import numpy as np
 import Algorithms.dynamicProgramming as dp
-def FW(x0, p0, P, gradF, isMax=False, maxError = 1e-1, returnLastGrad = False, maxIterations = 5):
+def localFW(x0, p0, P, gradF, maxIterations = 5 ):
+    it = 1;
+    actions = 6;
+    gradient = gradF(x0);
+    xk  = x0;
+    totalxK = np.zeros(actions);
+    xHistory = [];
+    xHistory.append(x0);
+    while it <= maxIterations:
+        step = 2./(1.+it);
+        V, xNext = localSubproblem(gradient, p0, P);
+        xk = (1. - step)* xk + step*xNext;
+        gradient = gradF(xk);
+        totalxK += 1.0*xk;
+        xHistory.append(1.0*xk);
+        it += 1;
+    return xk, xHistory;
+
+def localSubproblem(gradient, p0, P):
+    actions= gradient.shape;
+    xNext = np.zeros(actions);
+    V = np.min(gradient);
+    policy = np.argmin(gradient);
+    xNext[int(policy)] = p0;
+    return V, xNext;     
+ 
+def FW(x0, p0, P, gradF, isMax=False, maxError = 1e-1, returnLastGrad = False, maxIterations = 100):
     it = 1;
     err= 1000.;
     states, actions, time = x0.shape;
@@ -20,7 +46,7 @@ def FW(x0, p0, P, gradF, isMax=False, maxError = 1e-1, returnLastGrad = False, m
         step = 2./(1.+it);
 #        print "error: ", err;
         lastGrad =  gradient;
-        V, xNext = subproblem(gradient, p0, P,isMax);
+        V, xNext  = subproblem(gradient, p0, P,isMax);
         xk = (1. - step)* xk + step*xNext;
         gradient = gradF(xk);
         totalxK += 1.0*xk;
@@ -79,7 +105,33 @@ def subproblem(gradient, p0, P, isMax = False):
         trajectory[:,t] =  np.einsum('ijk,jk',P,x);
 
     return V, xNext; 
-   
+def FW_inf(x0, p0, P, gradF, isMax=False, maxError = 1e-1, returnLastGrad = False, maxIterations = 100):
+    it = 1;
+    err= 1000.;
+    states, actions = x0.shape;
+    gradient = gradF(x0);
+    xk  = x0;
+    totalxK = np.zeros((states,actions));
+    xHistory = [];
+    xHistory.append(x0);
+    dk = None;
+    while it <= maxIterations and err >= maxError:
+        step = 2./(1.+it);
+#        print "error: ", err;
+        lastGrad =  gradient;
+        V, xNext  = subproblem(gradient, p0, P,isMax);
+        xk = (1. - step)* xk + step*xNext;
+        gradient = gradF(xk);
+        totalxK += 1.0*xk;
+#        xHistory.append(totalxK/it);
+        xHistory.append(1.0*xk);
+        err = np.linalg.norm(lastGrad - gradient);
+        dk = xNext;
+        it += 1;
+    if returnLastGrad:
+        return xk, xHistory, dk;
+    else:
+        return xk, xHistory;   
 def FW_fixedDemand(x0,z0, demand, P, gradF, maxError = 1e-1):
     maxIterations = 500;
     it = 1;

@@ -94,7 +94,7 @@ def drawOptimalPopulation(time,pos,G,optRes, is2D = False,
         # Draw the white circle
         cap[constrainedState]= cap[constrainedState]/(constrainedUpperBound); 
         
-    nx.draw(G, pos=pos, node_size=numPlayers*numPlayers*cap, node_color='w',with_labels=True, font_weight='bold');
+    nx.draw(G, pos=pos, node_size=numPlayers*cap, node_color='w',with_labels=True, font_weight='bold');
     dontStop = True; 
     try:
         

@@ -88,7 +88,7 @@ for iter in range(threshIter):
 #    threshVal[iter] = 91.0 - (iter/2.)**2; 
     threshVal[iter] = 1e-3;
     x0 = np.zeros((sGame.States, sGame.Actions, sGame.Time));   
-    ytThresh[:,:,:,iter], ytHist = fw.FW(x0, p0, sGame("probability"), gradF, threshVal[iter]);
+    ytThresh[:,:,:,iter], ytHist = fw.FW(x0, p0, sGame("probability"), gradF, threshVal[iter], maxIterations = 2000);
     yDP = abs(ut.truncate(ytThresh[:,:,:,iter]));
     normDiff[iter, 0] = la.norm((ytThresh[:,:,:,iter] - optCSol));
     normDiff[iter, 1] = (abs(ytThresh[:,:,:,iter] - optCSol)).max();      
@@ -139,12 +139,12 @@ for i in range(len(ytHist)):
     ytHistArr[i, 1] = la.norm((ytHist[i][cState,:,:])- (optCSol[cState,:,:]));
     
 plt.plot(np.linspace(1, len(ytHist),len(ytHist)), ytHistArr[:, 0]/(la.norm(optCSol)), linewidth = 2, label = r'$||\cdot||_2$',color = blue);
-plt.plot(np.linspace(1, len(ytHist),len(ytHist)), ytHistArr[:, 1]/(la.norm(optCSol[cState,:,:])), label =r'$||\cdot||_2 $, state 7', linewidth = 2, linestyle = ':', color = blue);
-plt.legend();
+#plt.plot(np.linspace(1, len(ytHist),len(ytHist)), ytHistArr[:, 1]/(la.norm(optCSol[cState,:,:])), label =r'$||\cdot||_2 $, state 7', linewidth = 2, linestyle = ':', color = blue);
+#plt.legend();
 #plt.title("Difference in Norm as a function of termination tolerance")
 plt.xlabel(r"Iterations");
-plt.ylabel(r"$\frac{||y^{\epsilon} - y^{\star}||}{||y^{\star}||}$");
-plt.xscale('log')
-#plt.xscale("log");
+plt.ylabel(r"$||y^{\epsilon} - y^{\star}||_2$");
+plt.yscale('log')
+#plt.xscale('log');
 plt.grid();
 plt.show();
