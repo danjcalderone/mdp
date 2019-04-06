@@ -19,31 +19,32 @@ def dualAscent(lambda0,
                optVar = None):
     states, actions, time = y0.shape;
     it= 0;
-    maxIterations = 500;
+    maxIterations = 300;
     lamb = lambda0;
     lambHist = np.zeros(maxIterations); 
     yHist = np.zeros((states, actions, time, maxIterations));
     certificate = np.zeros(maxIterations);
     yCState = np.zeros(maxIterations);
     err = maxErr *2;
+    alpha =0.3;
     while it < maxIterations and err >= maxErr:
 #        print "at iteration ",it;
         def gradF(x): 
             return -np.multiply(R,x) + C + lamb;
-        ytCThresh, ytCHist, dk = fw.FW(y0, p0, P, gradF, True, maxError = 1e-1,returnLastGrad = True);
+        ytCThresh, ytCHist, dk = fw.FW(y0, p0, P, gradF, True, maxError = 1e-1,returnLastGrad = True, maxIterations = int( 2*it + 1));
         for i in range(3,time):
             #alpha factor is one
-            if lamb[cState,0,i] + cThresh - np.sum(ytCThresh[cState,:,i])  > 0:
-                lamb[cState,:,i] += cThresh - np.sum(ytCThresh[cState,:,i]) ;
+            if lamb[cState,0,i] + alpha*( cThresh - np.sum(ytCThresh[cState,:,i]))  > 0:
+                lamb[cState,:,i] += alpha*( cThresh - np.sum(ytCThresh[cState,:,i]));
             else:
                 lamb[cState,:,i] = np.zeros(actions);
-            
         lambHist[it] = la.norm(lamb - optVar);
-        yCState[it] =  np.sum(ytCThresh[cState,:,time-3]);
+        for t in range(time-3,time):
+            yCState[it] +=  (np.sum(ytCThresh[cState,:,t]) - 10)**2;
         yHist[:,:,:,it] = ytCThresh;
         certificate[it] = np.sum(np.multiply(ytCThresh - dk, gradF(ytCThresh)))
         it +=1;
-    return certificate, yCState, lambHist, lamb;
+    return yHist, yCState, lambHist, lamb;
  
 def admm(lambda0, 
          rho,
@@ -55,17 +56,18 @@ def admm(lambda0,
          R,
          C,
          maxErr = 1.0,
-         optVar = None):
+         optVar = None,
+         maxIterations = 500):
     states, actions, time = y0.shape;
     it= 0;
-    maxIterations = 100;
+#    maxIterations = 200;
     lamb = lambda0;
     certificate = np.zeros(maxIterations);
     lambHist = np.zeros(maxIterations); 
-    yHist = np.zeros(maxIterations);
+    yHist = np.zeros((states, actions, time, maxIterations));
     err = maxErr *2;
     while it < maxIterations and err >= maxErr:
-        if it%20 == 0:    
+        if it%50 == 0:    
             print "at iteration ",it;
         slack = np.zeros((states,actions,time));
         def gradF(x): 
@@ -87,7 +89,7 @@ def admm(lambda0,
                 slack[cState,:,i] = np.sum(ytCThresh[cState,:,i]) - lamb[cState,0,i]/rho - cThresh; 
                 
         lambHist[it] = la.norm(lamb - optVar);
-        yHist[it] =  np.sum(ytCThresh[cState,:,time-3]);
+        yHist[:,:,:,it] = ytCThresh;
         certificate[it] = np.sum(np.multiply(ytCThresh - dk, gradF(ytCThresh)))
         it +=1;
     return yHist, lambHist,certificate, lamb;

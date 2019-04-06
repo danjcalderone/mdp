@@ -167,4 +167,42 @@ plt.ylabel('Density');
 plt.legend(bbox_to_anchor=(1.00, 1), loc='upper left',fontsize = 'x-small');
 plt.show();
 
+plt.plot()
 
+
+#--------------------- heat map ----------------------------------------------#
+diffRes = optRes - optCSol;
+diffResPos = np.where(diffRes > 0, diffRes, 0);
+diffResNeg = np.where(diffRes < 0, diffRes, 0);
+stateRes = np.einsum('ijt->it', diffResPos);
+stateResPos = np.einsum('ijt->it', diffResPos);
+stateResNeg = np.einsum('ijt->it', diffResNeg);
+timeAveragePos = np.einsum('ij->i', abs(stateResPos));
+timeAverageNeg = np.einsum('ij->i', abs(stateResNeg));
+timeAverage = np.einsum('ij->i', abs(stateRes));
+plt.figure();
+width = 17;
+fullW = 20;
+#for node in sGame("graphPos"):
+#    if timeAveragePos[node-1] > timeAverageNeg[node - 1]:
+#        nx.draw_networkx_nodes(sGame("G"), pos=sGame("graphPos"), node_size=fullW*timeAveragePos[node-1], nodelist = [node], node_color='r',alpha = 1);
+#        nx.draw_networkx_nodes(sGame("G"), pos=sGame("graphPos"), node_size= width*timeAveragePos[node-1], nodelist = [node], node_color='w',alpha = 1);
+#        
+#        nx.draw_networkx_nodes(sGame("G"), pos=sGame("graphPos"), node_size=fullW*timeAverageNeg[node-1], nodelist = [node], node_color='b',alpha = 1);
+#        nx.draw_networkx_nodes(sGame("G"), pos=sGame("graphPos"), node_size= width*timeAverageNeg[node-1] - width, nodelist = [node], node_color='w',alpha = 1);
+#    else:
+#        nx.draw_networkx_nodes(sGame("G"), pos=sGame("graphPos"), node_size=fullW*timeAverageNeg[node-1], nodelist = [node], node_color='b',alpha = 1);
+#        nx.draw_networkx_nodes(sGame("G"), pos=sGame("graphPos"), node_size= width*timeAverageNeg[node-1], nodelist = [node], node_color='w',alpha = 1);
+#        
+#        nx.draw_networkx_nodes(sGame("G"), pos=sGame("graphPos"), node_size=fullW*timeAveragePos[node-1], nodelist = [node], node_color='r',alpha = 1);
+#        nx.draw_networkx_nodes(sGame("G"), pos=sGame("graphPos"), node_size= width*timeAveragePos[node-1], nodelist = [node], node_color='w',alpha = 1);
+#        
+#    nx.draw_networkx_nodes(sGame("G"), pos=sGame("graphPos"), node_size=20*timeAverageNeg, node_color='r',with_labels=True, font_weight='bold',alpha = 0.8);
+#nx.draw_networkx_nodes(sGame("G"), pos=sGame("graphPos"), node_size=20*timeAverageNeg, node_color='r',with_labels=True, font_weight='bold',alpha = 0.8, facecolors = 'None');
+#nx.draw_networkx_nodes(sGame("G"), pos=sGame("graphPos"), node_size=20*timeAveragePos, node_color='c',with_labels=True, font_weight='bold',alpha = 0.5, facecolors = 'None');
+#nx.draw(sGame("G"),sGame("graphPos"),node_size=5*timeAverageNeg,node_color='r',with_labels=True, font_weight='bold',alpha = 1);
+#nx.draw_networkx_nodes(sGame("G"), pos=sGame("graphPos"), node_size= 500, node_color=timeAveragePos,alpha = 0.8, cmap=plt.cm.Blues);
+nx.draw_networkx_nodes(sGame("G"), pos=sGame("graphPos"), node_size= 500, node_color=timeAverageNeg,alpha = 0.8, cmap=plt.cm.Reds);
+nx.draw(sGame("G"),sGame("graphPos"),node_size=1,node_color='none',with_labels=True, font_weight='bold',alpha = 0.8)  
+plt.show();    
+    

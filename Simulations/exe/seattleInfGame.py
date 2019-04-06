@@ -20,7 +20,7 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 seattle = imdp.gParam("seattleQuad", None, None);
-sGame = imdp.infMDP(seattle, beta = 1.0);
+sGame = imdp.infMDP(seattle, beta = 0.8);
 seattleGraph=sGame.G;
 #nx.draw(seattleGraph, pos = sGame("graphPos"),with_labels=True);
 #plt.show()
@@ -36,7 +36,7 @@ p0[8] = 1./residentialNum;
 p0[10] = 1./residentialNum;
 p0[11] = 1./residentialNum;
 
-discountF = np.linspace(0.0,1.0,num=20);
+discountF = np.array([0.8]);#np.linspace(0.0,1.0,num=20);
 Iterations = len(discountF);
 infRes = np.zeros([sGame.States, sGame.Actions, Iterations]);
 infObj = np.zeros(Iterations);

@@ -53,7 +53,8 @@ class infMDP:
             self.P, c, d = mdp.generateQuadMDP(self.States,
                                         self.Actions,
                                         self.G,
-                                        distances)
+                                        distances,
+                                        p = 0.7)
             self.R = np.zeros((self.States,self.Actions));
             self.C = np.zeros((self.States,self.Actions));
             self.R = 1.0*d;
@@ -74,7 +75,7 @@ class infMDP:
                      for i in range(self.States) ])
                 for j in range(self.Actions)]);
         self.yij = y_ij;
-        self.lpObj = objF;
+        self.lpObj = 1/self.beta*objF;
 
 # ----------------------LP setPositivity Constraints --------------------------
     def setPositivity(self):
@@ -97,7 +98,7 @@ class infMDP:
             # mass conservation constraints between timesteps
             prevProb = self.beta*sum([sum([y_ij[(iLast,j)]*self.P[i,iLast,j] 
                             for iLast in range(states) ]) 
-                       for j in range(actions)]) + p0[i] ;
+                       for j in range(actions)]) + (1-self.beta)*p0[i] ;
             newProb = sum([y_ij[(i,j)] 
                       for j in range(actions)]);
             self.massConservation.append(newProb == prevProb);

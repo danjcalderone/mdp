@@ -29,7 +29,7 @@ import numpy.linalg as la
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
-
+plt.close('all')
 Time = 20;
 seattle = mrg.gParam("seattleQuad", None, None);
 
@@ -93,7 +93,13 @@ p0[11] =1.*numPlayers/residentialNum;
 ##    optCRes = sGame.solveWithConstraint(p0,verbose = False, constraintList = constraintList);
 ##    optDual = ut.matGen(constraintList, sGame.optimalDual, [sGame.States, sGame.Actions, Time]);
 ##    optObj[people] = sGame.socialCost(optCRes);
-##    print ("Social cost at constrained User Optimal");
+##    print ("Social cost at constrained User Optimal");mming problem of unconstrained problem"; 
+#cR = mdp.constrainedReward3D(sGame("reward"),
+#                             sGame("optDual") + 0.01, # make dual the interiors
+#                             sGame("constrainedState"));         
+#tolls = np.concatenate((np.zeros(3),sGame("optDual")));         
+#dpVC, dpSolC = dp.dynamicPLinearCost(sGame("reward"),
+#                               
 ##    print (optObj[people]);
 #    
 ##timeLine = np.linspace(1,Time,20)
