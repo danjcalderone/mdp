@@ -162,7 +162,8 @@ plt.plot(timeLine[start:],exampleTraj1[start:],label = r"$s_2$ unconstrained",li
 plt.plot(timeLine[start:],exampleTraj2[start:],label = r"$s_2$ constrained",linewidth = 2,color =orange);
 plt.plot(timeLine[start:],np.concatenate((np.zeros(3),sGame("optDual")))/60., label = "toll charged", linestyle = ":", linewidth = 2, color = 'k');
 plt.grid();
-plt.xlabel('Time');   
+plt.xlabel('Time'); 
+plt.ylabel('Density');  
 plt.legend(bbox_to_anchor=(1.00, 1), loc='upper left',fontsize = 'x-small');
 plt.show();
 

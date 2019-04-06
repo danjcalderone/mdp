@@ -297,7 +297,7 @@ class mdpRoutingGame:
         print mdpRes
         optRes = mdp.cvxDict2Arr(y_ijt,[states,actions,time]);
         optDual = mdp.cvxList2Arr(densityConstraints,[time],True);
-        self.optimalDual = mdp.truncate(optDual);   
+        self.optimalDual = abs(mdp.truncate(optDual));   
         return optRes;
         
         

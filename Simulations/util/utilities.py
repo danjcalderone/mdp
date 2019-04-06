@@ -11,7 +11,7 @@ from collections import namedtuple
 # plotting output settings
 mpl.rc('font',**{'family':'serif'})
 mpl.rc('text', usetex=True)
-mpl.rcParams.update({'font.size': 24})
+mpl.rcParams.update({'font.size': 20})
 mpl.rc('legend', fontsize='small')
 # specify which graph we are using for the mdp problem
 Constraint = namedtuple("constraints", "index value upperBound");

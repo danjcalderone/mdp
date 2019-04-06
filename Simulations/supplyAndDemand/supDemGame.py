@@ -64,7 +64,7 @@ for t in range(tsa.time):
 C0 = np.multiply(R, trajectory) + C;
 realCost = np.multiply(R, optRes) + C;
           
-V, pol, Cost, traj, error = pgm.projectGradient(R, C, p0, C0, P, 8e-1, 1e4, tsa, 218094.34132);
+V, pol, Cost, traj, error = pgm.projectGradient(R, C, p0, C0, P, 8e-1, 1e-2, tsa, 218094.34132);
 #np.sum(abs(Cost - realCost)); 
 
 fig = plt.figure();  

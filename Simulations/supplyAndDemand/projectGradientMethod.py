@@ -17,7 +17,7 @@ def projectGradient(R, C, p0, C0, P, stepSize, eps, tsa, realCost):
     # 1: find random c0 to start with
     Cost = C0;
     C0 = np.zeros((tsa.state,tsa.action, tsa.time));
-    maxIter = 500;
+    maxIter = 1000;
     data = np.zeros(maxIter);
    
     loop = 0;
