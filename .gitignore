@@ -11,4 +11,7 @@ Simulations/.ipynb_checkpoints/
 *.log
 *.syntex.gz
 Simulations/iPython/
-../Tolling Paper/
+*/Tolling Paper/*
+*.pdf
+*.zip
+*.html

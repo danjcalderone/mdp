@@ -42,13 +42,14 @@ testN = 2;
 dualPlot = plt.figure(1); plt.grid();
 densityPlot = plt.figure(2); plt.grid();
 certificatePlot = plt.figure(3);
+constraintViolationPlot = plt.figure(4);
 
 rhoVal = np.linspace(1, 2, testN);
 maxIter  = 500;
 Iterations= np.linspace(1,maxIter, maxIter);
 timeLine = np.linspace(1,Time,Time);
 lamb1 = None;
-def gameObj(yk, length = 1):
+def gameObj(yk, rho, length = 1):
     obj = None;
     if length  == 1:
         obj = np.sum(0.5*np.multiply(np.multiply(sGame.R, sGame.R),yk) + np.multiply(sGame.C,yk)); # + rho/2*la.norm(np.sum(yk[cState,:,3:Time],axis=0) - 10*np.ones(Time-3))**2
@@ -58,6 +59,16 @@ def gameObj(yk, length = 1):
             yki = yk[:,:,:,i];
             obj[i] =  np.sum(0.5*np.multiply(np.multiply(sGame.R, sGame.R),yki) + np.multiply(sGame.C,yki)); #  + rho/2*la.norm(np.sum(yki[cState,:,3:Time],axis=0) - 10*np.ones(Time-3))**2
     return obj;
+
+def constraintResidual(yk, length):
+    res = np.zeros(length);
+    for i in range(length):
+        yki = yk[:,:,:,i];
+        for j in range(Time):
+            if j >= 3:
+                res[i] += np.square(np.sum(yki[cState,:, j]) - cThresh)
+    return res;
+        
 for penaltyIter in range(testN):
     rho = rhoVal[penaltyIter];
     print "solving penalty ", rho;
@@ -69,11 +80,16 @@ for penaltyIter in range(testN):
     
     yHist, lambHist, certificate,finalLamb = da.admm(lambda0, rho, y0, p0, sGame.P, cState,cThresh, sGame.R, sGame.C, maxErr = 1.0, optVar= barC,maxIterations = maxIter);
     a,b,c,d = yHist.shape;
-    plt.figure(2); # cost convergence
-    constrainedCost =gameObj(yHist,rho, d);
+    
+   
+    constrainedCost = gameObj(yHist,1, d);
     averageConstrainedCost = 1.0*constrainedCost;
     for i in range(len(constrainedCost)) :
         averageConstrainedCost[i] = np.sum(constrainedCost[0:i])/(i+1);
+    constraintViolation = constraintResidual(yHist, d);
+    
+
+    plt.figure(2); # cost convergence
     plt.plot(Iterations,abs(gameObj(optCRes, rho) - averageConstrainedCost)/gameObj(optCRes,rho) , label = '%.1f'%rho );
     plt.yscale('log');
     plt.ylabel(r"$\frac{|L^\star - L^k|}{L^\star}$");
@@ -84,6 +100,12 @@ for penaltyIter in range(testN):
     plt.plot(Iterations,1.0*lambHist/la.norm(barC), label = '%.2f'%rho);
     plt.yscale('log');
     plt.ylabel(r"$\frac{\|\tau^k - \tau^\star\|}{\|\tau^\star\|}$");
+    plt.xlabel("Iterations");
+    
+    plt.figure(4)
+    plt.plot(Iterations, constraintViolation, label = '%.2f'%rho);
+    plt.yscale('log');
+    plt.ylabel(r"$\|Ay - b\|^2$");
     plt.xlabel("Iterations");
 
     if penaltyIter == 0:
@@ -157,11 +179,11 @@ for j in range(5):
     ytCHistArr = np.zeros(len(ytCHist));
     for i in range(len(ytCHist)):
 #        ytCHistArr[i] = la.norm((ytCHist[i]  - optCRes));
-        ytCHistArr[i] = gameObj(ytCHist[i]);
+        ytCHistArr[i] = gameObj(ytCHist[i], 1);
     averagedCYt = 1.0*ytCHistArr;
     for i in range(len(ytCHistArr)) :
         averagedCYt[i] = np.sum(ytCHistArr[0:i])/(i+1);
-    plt.plot(np.linspace(1, len(ytCHist),len(ytCHist)), abs(gameObj(optCRes) - averagedCYt)/gameObj(optCRes), linewidth = 2, label = str(curDelta - 1));
+    plt.plot(np.linspace(1, len(ytCHist),len(ytCHist)), abs(gameObj(optCRes, 1) - averagedCYt)/gameObj(optCRes,1), linewidth = 2, label = str(curDelta - 1));
     finalytCThresh = ytCThresh;
 plt.legend();
 #plt.title("Difference in Norm as a function of termination tolerance")
