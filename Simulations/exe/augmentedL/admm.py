@@ -102,6 +102,10 @@ for penaltyIter in range(testN):
     plt.ylabel(r"$\frac{\|\tau^k - \tau^\star\|}{\|\tau^\star\|}$");
     plt.xlabel("Iterations");
     
+    plt.figure(3);
+    plt.plot(Iterations, 1.0*certificate/gameObj(optCRes,rho), label = '%.2f'%rho);
+    plt.grid();
+    
     plt.figure(4)
     plt.plot(Iterations, constraintViolation, label = '%.2f'%rho);
     plt.yscale('log');
@@ -115,9 +119,9 @@ for penaltyIter in range(testN):
 #    axs[0].plot(timeLine, np.sum(ytThresh[cState,:,:],axis=0), linewidth = 2, linestyle = "-.", label ='exact penalty FW');
 
     
-plt.figure(3);
-plt.plot(Iterations, 1.0*certificate/gameObj(optCRes,rho), label = '%.2f'%rho);
-plt.grid();
+#plt.figure(3);
+#plt.plot(Iterations, 1.0*certificate/gameObj(optCRes,rho), label = '%.2f'%rho);
+#plt.grid();
 
 densityPlot.legend();
 densityPlot.show();
