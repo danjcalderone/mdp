@@ -32,7 +32,7 @@ def localSubproblem(gradient, p0, P):
     xNext[int(policy)] = p0;
     return V, xNext;     
  
-def FW(x0, p0, P, gradF, isMax=False, maxError = 1e-1, returnLastGrad = False, maxIterations = 100):
+def FW(x0, p0, P, gradF, isMax=False, maxError = 1e-1, returnLastGrad = False, maxIterations = 5000):
     it = 1;
     err= 1000.;
     states, actions, time = x0.shape;
@@ -45,18 +45,25 @@ def FW(x0, p0, P, gradF, isMax=False, maxError = 1e-1, returnLastGrad = False, m
     while it <= maxIterations and err >= maxError:
         step = 2./(1.+it);
 #        print "error: ", err;
-        lastGrad =  gradient;
+        lastX =  1.0*xk;
+        lastGrad = 1.0*gradient;
         V, xNext  = subproblem(gradient, p0, P,isMax);
         xk = (1. - step)* xk + step*xNext;
         gradient = gradF(xk);
         totalxK += 1.0*xk;
 #        xHistory.append(totalxK/it);
         xHistory.append(1.0*xk);
-        err = np.linalg.norm(lastGrad - gradient);
+#        err = np.linalg.norm(lastGrad - gradient);
+        err = -np.sum(np.multiply(lastGrad,(lastX - xNext)));
+#        print "error is ", err;
         dk = xNext;
         it += 1;
+    if it >= maxIterations:
+        print "ran out of iteraitons FW, error is", err;
+    else:
+        print " took iterations ", it;
     if returnLastGrad:
-        return xk, xHistory, dk;
+        return xk, xHistory, err;
     else:
         return xk, xHistory;
 

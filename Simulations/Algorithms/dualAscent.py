@@ -57,7 +57,7 @@ def admm(lambda0,
          C,
          maxErr = 1.0,
          optVar = None,
-         maxIterations = 500):
+         maxIterations = 100):
     states, actions, time = y0.shape;
     it= 0;
 #    maxIterations = 200;
@@ -66,31 +66,35 @@ def admm(lambda0,
     lambHist = np.zeros(maxIterations); 
     yHist = np.zeros((states, actions, time, maxIterations));
     err = maxErr *2;
+    slack = np.zeros((states,actions,time));
     while it < maxIterations and err >= maxErr:
         if it%50 == 0:    
-            print "at iteration ",it;
-        slack = np.zeros((states,actions,time));
+            print "----------- at iteration ",it;
+#        slack = np.zeros((states,actions,time));
         def gradF(x): 
             ell = -np.multiply(R,x) + C;
-            penalty = lamb;
+            penalty = lamb + slack;
             residual = np.zeros((states,actions,time));
             for i in range(3, time):
                 if np.sum(x[cState,:,i]) < cThresh:
                     residual[cState,:,i] = cThresh - np.sum(x[cState,:,i]);
-            return ell + penalty + rho*(residual + slack);
-        ytCThresh, ytCHist, dk = fw.FW(y0, p0, P, gradF, True, maxError = 1e-1, returnLastGrad= True);
+            return ell + penalty + rho*(residual);
+        
+        ytCThresh, ytCHist, dk = fw.FW(y0, p0, P, gradF, True, maxError = 1000/(it+1), returnLastGrad= True);
+#        y0 = 1.0*ytCThresh;
         for i in range(3,time):
             # alpha factor is one
             if lamb[cState,0,i]/rho + cThresh - np.sum(ytCThresh[cState,:,i])  > 0:
                 # slack is zero
                 lamb[cState,:,i] += rho*(cThresh - np.sum(ytCThresh[cState,:,i]) );
+                slack[cState,:,i] = np.zeros(actions);
             else:
                 lamb[cState,:,i] = np.zeros(actions);
                 slack[cState,:,i] = np.sum(ytCThresh[cState,:,i]) - lamb[cState,0,i]/rho - cThresh; 
                 
         lambHist[it] = la.norm(lamb - optVar);
         yHist[:,:,:,it] = ytCThresh;
-        certificate[it] = np.sum(np.multiply(ytCThresh - dk, gradF(ytCThresh)))
+        certificate[it] = dk;# np.sum(np.multiply(ytCThresh - dk, gradF(ytCThresh)))
         it +=1;
     return yHist, lambHist,certificate, lamb;
                
